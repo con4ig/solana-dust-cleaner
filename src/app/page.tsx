@@ -415,16 +415,29 @@ export default function Home() {
                 onClick={handleScan}
                 disabled={scanning || reclaiming}
                 style={{
-                  background: scanned ? "var(--surface)" : "var(--primary)",
-                  color: scanned ? "var(--ink)" : "oklch(1.000 0.000 0)",
-                  border: scanned ? "1px solid var(--border)" : "none",
+                  background: "oklch(1.000 0.000 0 / 0.04)",
+                  color: "var(--ink)",
+                  border: "1px solid var(--border)",
                   borderRadius: "var(--radius-md)",
                   padding: "0.5rem 1rem",
                   fontSize: "0.875rem",
                   fontWeight: 600,
                   cursor: scanning || reclaiming ? "wait" : "pointer",
                   opacity: scanning || reclaiming ? 0.6 : 1,
-                  transition: "background 200ms ease-out, opacity 200ms ease-out",
+                  transition:
+                    "background 150ms ease-out, border-color 150ms ease-out, opacity 200ms ease-out",
+                }}
+                onMouseEnter={(e) => {
+                  if (!scanning && !reclaiming) {
+                    e.currentTarget.style.background = "oklch(1.000 0.000 0 / 0.08)";
+                    e.currentTarget.style.borderColor = "oklch(1.000 0.000 0 / 0.18)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!scanning && !reclaiming) {
+                    e.currentTarget.style.background = "oklch(1.000 0.000 0 / 0.04)";
+                    e.currentTarget.style.borderColor = "var(--border)";
+                  }
                 }}
               >
                 {scanning ? "Scanning..." : scanned ? "Rescan" : "Scan wallet"}
@@ -780,26 +793,29 @@ export default function Home() {
                       onClick={handleReclaim}
                       disabled={reclaiming}
                       style={{
-                        background: reclaiming ? "var(--surface)" : "var(--primary)",
-                        color: reclaiming ? "var(--muted)" : "oklch(1.000 0.000 0)",
-                        border: reclaiming ? "1px solid var(--border)" : "none",
+                        background: reclaiming ? "var(--surface)" : "oklch(1.000 0.000 0 / 0.04)",
+                        color: reclaiming ? "var(--muted)" : "var(--ink)",
+                        border: "1px solid var(--border)",
                         borderRadius: "var(--radius-md)",
                         padding: "0.75rem 1.5rem",
                         fontSize: "0.9375rem",
                         fontWeight: 700,
                         cursor: reclaiming ? "wait" : "pointer",
                         opacity: reclaiming ? 0.6 : 1,
-                        transition: "background 200ms ease-out, opacity 200ms ease-out",
+                        transition:
+                          "background 150ms ease-out, border-color 150ms ease-out, opacity 200ms ease-out",
                         width: "100%",
                       }}
                       onMouseEnter={(e) => {
                         if (!reclaiming) {
-                          e.currentTarget.style.background = "var(--primary-hover)";
+                          e.currentTarget.style.background = "oklch(1.000 0.000 0 / 0.08)";
+                          e.currentTarget.style.borderColor = "oklch(1.000 0.000 0 / 0.18)";
                         }
                       }}
                       onMouseLeave={(e) => {
                         if (!reclaiming) {
-                          e.currentTarget.style.background = "var(--primary)";
+                          e.currentTarget.style.background = "oklch(1.000 0.000 0 / 0.04)";
+                          e.currentTarget.style.borderColor = "var(--border)";
                         }
                       }}
                     >

@@ -1,0 +1,157 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+/*
+  Solana Dust Cleaner — Design Tokens
+  Palette composed from seed oklch(0.720 0.100 188.0) (teal)
+  Strategy: Restrained (tinted neutrals + single accent ≤10%)
+  Mood: "A trusted utility counter — friendly teller, clear numbers,
+         you leave with your money in 30 seconds."
+*/
+
+:root {
+  /* Primary — seed teal, confident mid-tone */
+  --primary: oklch(0.620 0.120 185);
+  --primary-hover: oklch(0.560 0.130 185);
+  --primary-subtle: oklch(0.620 0.120 185 / 0.08);
+  --primary-border: oklch(0.620 0.120 185 / 0.20);
+
+  /* Accent — warm amber, clearly distinct from primary */
+  --accent: oklch(0.750 0.160 70);
+  --accent-subtle: oklch(0.750 0.160 70 / 0.10);
+
+  /* Background — pure near-black, no hue tint */
+  --bg: oklch(0.100 0.000 0);
+  --surface: oklch(0.145 0.000 0);
+  --surface-hover: oklch(0.170 0.000 0);
+  --border: oklch(1.000 0.000 0 / 0.08);
+  --border-hover: oklch(1.000 0.000 0 / 0.14);
+
+  /* Ink — high contrast, faint cool lean */
+  --ink: oklch(0.940 0.005 185);
+  --muted: oklch(0.600 0.005 185);
+  --faint: oklch(0.450 0.003 185);
+
+  /* Semantic */
+  --success: oklch(0.700 0.150 155);
+  --error: oklch(0.650 0.200 25);
+  --warning: oklch(0.780 0.160 85);
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+
+  /* Radii — product scale, not over-rounded */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 9999px;
+}
+
+@theme {
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+}
+
+/* Base */
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar — subtle, not custom-reinvented */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: oklch(1.000 0.000 0 / 0.10);
+  border-radius: var(--radius-pill);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(1.000 0.000 0 / 0.18);
+}
+
+/* Wallet Adapter — styled to match product palette */
+.wallet-adapter-button {
+  background: var(--primary) !important;
+  color: oklch(1.000 0.000 0) !important;
+  font-family: var(--font-sans) !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  border: none !important;
+  border-radius: var(--radius-md) !important;
+  padding: 0 1.25rem !important;
+  height: 2.5rem !important;
+  transition: background 200ms ease-out, box-shadow 200ms ease-out !important;
+  gap: 8px !important;
+}
+
+.wallet-adapter-button:not([disabled]):hover {
+  background: var(--primary-hover) !important;
+  box-shadow: 0 0 0 3px var(--primary-subtle) !important;
+}
+
+.wallet-adapter-button:not([disabled]):focus-visible {
+  outline: 2px solid var(--primary) !important;
+  outline-offset: 2px !important;
+}
+
+/* Wallet modal */
+.wallet-adapter-modal-wrapper {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: 0 24px 48px -12px oklch(0.000 0.000 0 / 0.50) !important;
+  padding: 1.5rem !important;
+  font-family: var(--font-sans) !important;
+}
+
+.wallet-adapter-modal-title {
+  color: var(--ink) !important;
+  font-weight: 700 !important;
+  font-size: 1.125rem !important;
+}
+
+.wallet-adapter-modal-list {
+  gap: 4px !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.wallet-adapter-modal-list .wallet-adapter-button {
+  width: 100% !important;
+  background: transparent !important;
+  border: 1px solid var(--border) !important;
+  color: var(--ink) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 0.625rem 1rem !important;
+  height: auto !important;
+  justify-content: flex-start !important;
+  font-weight: 500 !important;
+}
+
+.wallet-adapter-modal-list .wallet-adapter-button:hover {
+  background: var(--primary-subtle) !important;
+  border-color: var(--primary-border) !important;
+}
+
+.wallet-adapter-modal-button-close {
+  background: oklch(1.000 0.000 0 / 0.05) !important;
+  border-radius: 50% !important;
+  transition: background 150ms ease-out !important;
+}
+
+.wallet-adapter-modal-button-close:hover {
+  background: oklch(0.650 0.200 25 / 0.15) !important;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

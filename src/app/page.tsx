@@ -585,76 +585,162 @@ export default function Home() {
             {scanned && accounts.length === 0 && (
               <div
                 style={{
-                  background: "var(--surface)",
-                  border: "1px solid var(--border)",
-                  borderRadius: "var(--radius-lg)",
-                  padding: "3rem 2rem",
-                  textAlign: "center",
+                  animation: "fade-in-up 500ms cubic-bezier(0.4, 0, 0.2, 1)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "1.25rem",
                 }}
               >
-                <p style={{ fontWeight: 600, marginBottom: "0.25rem" }}>No empty accounts found</p>
-                <p style={{ color: "var(--muted)", fontSize: "0.875rem", marginBottom: "1.25rem" }}>
-                  All your token accounts have a balance, or have already been closed.
-                </p>
-                <button
-                  onClick={() => {
-                    setAccounts([
-                      {
-                        address: "Demo111111111111111111111111111111111111111",
-                        mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-                        label: "USDC",
-                        rentLamports: 2039280,
-                      },
-                      {
-                        address: "Demo222222222222222222222222222222222222222",
-                        mint: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
-                        label: "USDT",
-                        rentLamports: 2039280,
-                      },
-                      {
-                        address: "Demo333333333333333333333333333333333333333",
-                        mint: "DezXAZ8z7PnrFcPykJaaExZyF7pCm8yMc14UeLfA6fiZ",
-                        label: "BONK",
-                        rentLamports: 2039280,
-                      },
-                      {
-                        address: "Demo444444444444444444444444444444444444444",
-                        mint: "EKpQGSJtjMFqKZ9KQGWjhss7WnCXUs55M36xWXjRTVg7",
-                        label: "WIF",
-                        rentLamports: 2039280,
-                      },
-                      {
-                        address: "Demo555555555555555555555555555555555555555",
-                        mint: "JUPyiwrYdGVGbbJABNWdK7Xy13WCZtaAbWcNUSW5Gde",
-                        label: "JUP",
-                        rentLamports: 2039280,
-                      },
-                    ]);
-                    setScanned(true);
-                    setIsDemoMode(true);
-                    setLastSignature(null);
-                  }}
+                <div
                   style={{
-                    background: "none",
-                    border: "none",
-                    padding: 0,
-                    color: "var(--faint)",
-                    fontSize: "0.75rem",
-                    cursor: "pointer",
-                    textDecoration: "underline",
-                    textDecorationStyle: "dotted",
-                    textUnderlineOffset: "3px",
-                    transition: "color 150ms ease-out",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.color = "var(--muted)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.color = "var(--faint)";
+                    background: "var(--surface)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "var(--radius-lg)",
+                    padding: "3rem 2rem",
+                    textAlign: "center",
                   }}
                 >
-                  Preview with demo data
-                </button>
+                  <p style={{ fontWeight: 600, marginBottom: "0.25rem" }}>
+                    No empty accounts found
+                  </p>
+                  <p
+                    style={{ color: "var(--muted)", fontSize: "0.875rem", marginBottom: "1.25rem" }}
+                  >
+                    All your token accounts have a balance, or have already been closed.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setAccounts([
+                        {
+                          address: "Demo111111111111111111111111111111111111111",
+                          mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                          label: "USDC",
+                          rentLamports: 2039280,
+                        },
+                        {
+                          address: "Demo222222222222222222222222222222222222222",
+                          mint: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+                          label: "USDT",
+                          rentLamports: 2039280,
+                        },
+                        {
+                          address: "Demo333333333333333333333333333333333333333",
+                          mint: "DezXAZ8z7PnrFcPykJaaExZyF7pCm8yMc14UeLfA6fiZ",
+                          label: "BONK",
+                          rentLamports: 2039280,
+                        },
+                        {
+                          address: "Demo444444444444444444444444444444444444444",
+                          mint: "EKpQGSJtjMFqKZ9KQGWjhss7WnCXUs55M36xWXjRTVg7",
+                          label: "WIF",
+                          rentLamports: 2039280,
+                        },
+                        {
+                          address: "Demo555555555555555555555555555555555555555",
+                          mint: "JUPyiwrYdGVGbbJABNWdK7Xy13WCZtaAbWcNUSW5Gde",
+                          label: "JUP",
+                          rentLamports: 2039280,
+                        },
+                      ]);
+                      setScanned(true);
+                      setIsDemoMode(true);
+                      setLastSignature(null);
+                    }}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      padding: 0,
+                      color: "var(--faint)",
+                      fontSize: "0.75rem",
+                      cursor: "pointer",
+                      textDecoration: "underline",
+                      textDecorationStyle: "dotted",
+                      textUnderlineOffset: "3px",
+                      transition: "color 150ms ease-out",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = "var(--muted)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = "var(--faint)";
+                    }}
+                  >
+                    Preview with demo data
+                  </button>
+                </div>
+
+                {/* ── Success banner (persisted when all accounts closed) ── */}
+                {lastSignature && (
+                  <div
+                    style={{
+                      padding: "0.875rem 1rem",
+                      background: "var(--surface)",
+                      border: "1px solid var(--border)",
+                      borderRadius: "var(--radius-md)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "1rem",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <span style={{ fontSize: "0.8125rem", color: "var(--muted)" }}>
+                      {isDemoMode && (
+                        <span
+                          style={{
+                            fontSize: "0.6875rem",
+                            fontWeight: 600,
+                            color: "var(--faint)",
+                            letterSpacing: "0.04em",
+                            textTransform: "uppercase",
+                            marginRight: "0.5rem",
+                          }}
+                        >
+                          [demo]
+                        </span>
+                      )}
+                      Closed <strong style={{ color: "var(--ink)" }}>{lastClosedCount}</strong>{" "}
+                      account{lastClosedCount !== 1 ? "s" : ""} &mdash; reclaimed{" "}
+                      <strong style={{ color: "var(--primary)" }}>
+                        {formatSol(lastReclaimedLamports)} SOL
+                      </strong>
+                    </span>
+                    {isDemoMode ? (
+                      <span
+                        style={{
+                          fontSize: "0.75rem",
+                          color: "var(--faint)",
+                          flexShrink: 0,
+                        }}
+                      >
+                        View on Solana Explorer
+                      </span>
+                    ) : (
+                      <a
+                        href={`https://explorer.solana.com/tx/${lastSignature}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          fontSize: "0.75rem",
+                          color: "var(--muted)",
+                          textDecoration: "underline",
+                          textDecorationStyle: "dotted",
+                          textUnderlineOffset: "3px",
+                          flexShrink: 0,
+                          transition: "color 150ms ease-out",
+                        }}
+                        onMouseEnter={(e) => {
+                          (e.currentTarget as HTMLAnchorElement).style.color = "var(--ink)";
+                        }}
+                        onMouseLeave={(e) => {
+                          (e.currentTarget as HTMLAnchorElement).style.color = "var(--muted)";
+                        }}
+                      >
+                        View on Solana Explorer
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 

@@ -86,6 +86,8 @@ export default function Home() {
     setSelected(new Set());
     setAccounts([]);
 
+    const startTime = Date.now();
+
     try {
       const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
         programId: TOKEN_PROGRAM_ID,

@@ -814,8 +814,8 @@ export default function Home() {
                         style={{
                           marginTop: "1rem",
                           padding: "0.875rem 1rem",
-                          background: "oklch(0.700 0.150 155 / 0.08)",
-                          border: "1px solid oklch(0.700 0.150 155 / 0.25)",
+                          background: "var(--surface)",
+                          border: "1px solid var(--border)",
                           borderRadius: "var(--radius-md)",
                           display: "flex",
                           alignItems: "center",
@@ -841,7 +841,7 @@ export default function Home() {
                           )}
                           Closed <strong style={{ color: "var(--ink)" }}>{lastClosedCount}</strong>{" "}
                           account{lastClosedCount !== 1 ? "s" : ""} &mdash; reclaimed{" "}
-                          <strong style={{ color: "oklch(0.700 0.150 155)" }}>
+                          <strong style={{ color: "var(--primary)" }}>
                             {formatSol(lastReclaimedLamports)} SOL
                           </strong>
                         </span>

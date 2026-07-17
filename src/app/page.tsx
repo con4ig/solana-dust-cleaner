@@ -58,6 +58,7 @@ export default function Home() {
   const [lastClosedCount, setLastClosedCount] = useState(0);
   const [lastReclaimedLamports, setLastReclaimedLamports] = useState(0);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [closingAccounts, setClosingAccounts] = useState<Set<string>>(new Set());
 
   // Derived values
   const selectedAccounts = accounts.filter((a) => selected.has(a.address));
@@ -126,11 +127,18 @@ export default function Home() {
 
     // Demo mode: simulate success without real transaction
     if (isDemoMode) {
-      setLastClosedCount(selectedAccounts.length);
-      setLastReclaimedLamports(netLamports);
-      setLastSignature("DEMO_SIMULATION");
-      setAccounts((prev) => prev.filter((a) => !selected.has(a.address)));
-      setSelected(new Set());
+      setReclaiming(true);
+      setClosingAccounts(new Set(selectedAccounts.map((a) => a.address)));
+
+      setTimeout(() => {
+        setLastClosedCount(selectedAccounts.length);
+        setLastReclaimedLamports(netLamports);
+        setLastSignature("DEMO_SIMULATION");
+        setAccounts((prev) => prev.filter((a) => !selected.has(a.address)));
+        setSelected(new Set());
+        setClosingAccounts(new Set());
+        setReclaiming(false);
+      }, 1200);
       return;
     }
 
@@ -180,12 +188,18 @@ export default function Home() {
         throw new Error("Transaction failed on-chain.");
       }
 
-      const closedAddresses = new Set(selectedAccounts.map((a) => a.address));
-      setLastClosedCount(selectedAccounts.length);
-      setLastReclaimedLamports(netLamports);
-      setLastSignature(signature);
-      setAccounts((prev) => prev.filter((a) => !closedAddresses.has(a.address)));
-      setSelected(new Set());
+      setClosingAccounts(new Set(selectedAccounts.map((a) => a.address)));
+
+      // Add a small delay for animation if confirmation was faster than 500ms
+      setTimeout(() => {
+        const closedAddresses = new Set(selectedAccounts.map((a) => a.address));
+        setLastClosedCount(selectedAccounts.length);
+        setLastReclaimedLamports(netLamports);
+        setLastSignature(signature);
+        setAccounts((prev) => prev.filter((a) => !closedAddresses.has(a.address)));
+        setSelected(new Set());
+        setClosingAccounts(new Set());
+      }, 600);
     } catch (error) {
       console.error("Failed to execute transaction:", error);
       alert(error instanceof Error ? error.message : "Failed to execute transaction.");
@@ -459,7 +473,7 @@ export default function Home() {
                   style={{
                     height: "100%",
                     width: "40%",
-                    background: "var(--primary)",
+                    background: "var(--ink)",
                     borderRadius: "var(--radius-pill)",
                     animation: "scan-slide 1.2s ease-in-out infinite",
                   }}
@@ -690,7 +704,11 @@ export default function Home() {
                           borderBottom: "1px solid var(--border)",
                           cursor: "pointer",
                           background: isSelected ? "oklch(1.000 0.000 0 / 0.06)" : "transparent",
-                          transition: "background 150ms ease-out",
+                          transition: "all 300ms cubic-bezier(0.4, 0, 0.2, 1)",
+                          opacity: closingAccounts.has(account.address) ? 0 : 1,
+                          transform: closingAccounts.has(account.address)
+                            ? "scale(0.96) translateY(-4px)"
+                            : "scale(1) translateY(0)",
                         }}
                         onMouseEnter={(e) => {
                           if (!isSelected)

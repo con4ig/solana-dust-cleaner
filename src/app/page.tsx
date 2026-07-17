@@ -778,155 +778,167 @@ export default function Home() {
                 </div>
 
                 {/* Summary + action */}
-                {selectedAccounts.length > 0 && (
-                  <div
-                    style={{
-                      marginTop: "1.25rem",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "1rem",
-                    }}
-                  >
-                    {/* Breakdown */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateRows: selectedAccounts.length > 0 ? "1fr" : "0fr",
+                    opacity: selectedAccounts.length > 0 ? 1 : 0,
+                    transition: "all 400ms cubic-bezier(0.4, 0, 0.2, 1)",
+                  }}
+                >
+                  <div style={{ overflow: "hidden" }}>
                     <div
                       style={{
+                        marginTop: selectedAccounts.length > 0 ? "1.25rem" : "0",
                         display: "flex",
-                        justifyContent: "center",
-                        flexWrap: "wrap",
-                        gap: "1.5rem",
-                        fontSize: "0.875rem",
-                        color: "var(--muted)",
+                        flexDirection: "column",
+                        gap: "1rem",
+                        transition: "margin-top 400ms cubic-bezier(0.4, 0, 0.2, 1)",
+                        paddingBottom: "2px",
                       }}
                     >
-                      <span>
-                        {selectedAccounts.length} account{selectedAccounts.length !== 1 ? "s" : ""}{" "}
-                        selected
-                      </span>
-                      <span>
-                        Gross:{" "}
-                        <strong style={{ color: "var(--ink)" }}>
-                          {formatSol(totalRentLamports)} SOL
-                        </strong>
-                      </span>
-                      <span>
-                        Fee ({(feeRate * 100).toFixed(0)}%):{" "}
-                        <strong style={{ color: "var(--ink)" }}>
-                          {formatSol(feeLamports)} SOL
-                        </strong>
-                      </span>
-                    </div>
-
-                    {/* CTA */}
-                    <button
-                      onClick={handleReclaim}
-                      disabled={reclaiming}
-                      style={{
-                        background: reclaiming ? "var(--surface)" : "oklch(1.000 0.000 0 / 0.04)",
-                        color: reclaiming ? "var(--muted)" : "var(--ink)",
-                        border: "1px solid var(--border)",
-                        borderRadius: "var(--radius-md)",
-                        padding: "0.75rem 1.5rem",
-                        fontSize: "0.9375rem",
-                        fontWeight: 700,
-                        cursor: reclaiming ? "wait" : "pointer",
-                        opacity: reclaiming ? 0.6 : 1,
-                        transition:
-                          "background 150ms ease-out, border-color 150ms ease-out, opacity 200ms ease-out",
-                        width: "100%",
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!reclaiming) {
-                          e.currentTarget.style.background = "oklch(1.000 0.000 0 / 0.08)";
-                          e.currentTarget.style.borderColor = "oklch(1.000 0.000 0 / 0.18)";
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!reclaiming) {
-                          e.currentTarget.style.background = "oklch(1.000 0.000 0 / 0.04)";
-                          e.currentTarget.style.borderColor = "var(--border)";
-                        }
-                      }}
-                    >
-                      {reclaiming
-                        ? "Confirming transaction..."
-                        : `Close ${selectedAccounts.length} account${selectedAccounts.length !== 1 ? "s" : ""} and reclaim ${formatSol(netLamports)} SOL`}
-                    </button>
-
-                    {/* ── Success banner ── */}
-                    {lastSignature && (
+                      {/* Breakdown */}
                       <div
                         style={{
-                          marginTop: "1rem",
-                          padding: "0.875rem 1rem",
-                          background: "var(--surface)",
-                          border: "1px solid var(--border)",
-                          borderRadius: "var(--radius-md)",
                           display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          gap: "1rem",
+                          justifyContent: "center",
                           flexWrap: "wrap",
+                          gap: "1.5rem",
+                          fontSize: "0.875rem",
+                          color: "var(--muted)",
                         }}
                       >
-                        <span style={{ fontSize: "0.8125rem", color: "var(--muted)" }}>
-                          {isDemoMode && (
-                            <span
-                              style={{
-                                fontSize: "0.6875rem",
-                                fontWeight: 600,
-                                color: "var(--faint)",
-                                letterSpacing: "0.04em",
-                                textTransform: "uppercase",
-                                marginRight: "0.5rem",
-                              }}
-                            >
-                              [demo]
-                            </span>
-                          )}
-                          Closed <strong style={{ color: "var(--ink)" }}>{lastClosedCount}</strong>{" "}
-                          account{lastClosedCount !== 1 ? "s" : ""} &mdash; reclaimed{" "}
-                          <strong style={{ color: "var(--primary)" }}>
-                            {formatSol(lastReclaimedLamports)} SOL
+                        <span>
+                          {selectedAccounts.length} account
+                          {selectedAccounts.length !== 1 ? "s" : ""} selected
+                        </span>
+                        <span>
+                          Gross:{" "}
+                          <strong style={{ color: "var(--ink)" }}>
+                            {formatSol(totalRentLamports)} SOL
                           </strong>
                         </span>
-                        {isDemoMode ? (
-                          <span
-                            style={{
-                              fontSize: "0.75rem",
-                              color: "var(--faint)",
-                              flexShrink: 0,
-                            }}
-                          >
-                            View on Solana Explorer
-                          </span>
-                        ) : (
-                          <a
-                            href={`https://explorer.solana.com/tx/${lastSignature}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                              fontSize: "0.75rem",
-                              color: "var(--muted)",
-                              textDecoration: "underline",
-                              textDecorationStyle: "dotted",
-                              textUnderlineOffset: "3px",
-                              flexShrink: 0,
-                              transition: "color 150ms ease-out",
-                            }}
-                            onMouseEnter={(e) => {
-                              (e.currentTarget as HTMLAnchorElement).style.color = "var(--ink)";
-                            }}
-                            onMouseLeave={(e) => {
-                              (e.currentTarget as HTMLAnchorElement).style.color = "var(--muted)";
-                            }}
-                          >
-                            View on Solana Explorer
-                          </a>
-                        )}
+                        <span>
+                          Fee ({(feeRate * 100).toFixed(0)}%):{" "}
+                          <strong style={{ color: "var(--ink)" }}>
+                            {formatSol(feeLamports)} SOL
+                          </strong>
+                        </span>
                       </div>
-                    )}
+
+                      {/* CTA */}
+                      <button
+                        onClick={handleReclaim}
+                        disabled={reclaiming}
+                        style={{
+                          background: reclaiming ? "var(--surface)" : "oklch(1.000 0.000 0 / 0.04)",
+                          color: reclaiming ? "var(--muted)" : "var(--ink)",
+                          border: "1px solid var(--border)",
+                          borderRadius: "var(--radius-md)",
+                          padding: "0.75rem 1.5rem",
+                          fontSize: "0.9375rem",
+                          fontWeight: 700,
+                          cursor: reclaiming ? "wait" : "pointer",
+                          opacity: reclaiming ? 0.6 : 1,
+                          transition:
+                            "background 150ms ease-out, border-color 150ms ease-out, opacity 200ms ease-out",
+                          width: "100%",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!reclaiming) {
+                            e.currentTarget.style.background = "oklch(1.000 0.000 0 / 0.08)";
+                            e.currentTarget.style.borderColor = "oklch(1.000 0.000 0 / 0.18)";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!reclaiming) {
+                            e.currentTarget.style.background = "oklch(1.000 0.000 0 / 0.04)";
+                            e.currentTarget.style.borderColor = "var(--border)";
+                          }
+                        }}
+                      >
+                        {reclaiming
+                          ? "Confirming transaction..."
+                          : `Close ${selectedAccounts.length} account${selectedAccounts.length !== 1 ? "s" : ""} and reclaim ${formatSol(netLamports)} SOL`}
+                      </button>
+
+                      {/* ── Success banner ── */}
+                      {lastSignature && (
+                        <div
+                          style={{
+                            marginTop: "1rem",
+                            padding: "0.875rem 1rem",
+                            background: "var(--surface)",
+                            border: "1px solid var(--border)",
+                            borderRadius: "var(--radius-md)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            gap: "1rem",
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <span style={{ fontSize: "0.8125rem", color: "var(--muted)" }}>
+                            {isDemoMode && (
+                              <span
+                                style={{
+                                  fontSize: "0.6875rem",
+                                  fontWeight: 600,
+                                  color: "var(--faint)",
+                                  letterSpacing: "0.04em",
+                                  textTransform: "uppercase",
+                                  marginRight: "0.5rem",
+                                }}
+                              >
+                                [demo]
+                              </span>
+                            )}
+                            Closed{" "}
+                            <strong style={{ color: "var(--ink)" }}>{lastClosedCount}</strong>{" "}
+                            account{lastClosedCount !== 1 ? "s" : ""} &mdash; reclaimed{" "}
+                            <strong style={{ color: "var(--primary)" }}>
+                              {formatSol(lastReclaimedLamports)} SOL
+                            </strong>
+                          </span>
+                          {isDemoMode ? (
+                            <span
+                              style={{
+                                fontSize: "0.75rem",
+                                color: "var(--faint)",
+                                flexShrink: 0,
+                              }}
+                            >
+                              View on Solana Explorer
+                            </span>
+                          ) : (
+                            <a
+                              href={`https://explorer.solana.com/tx/${lastSignature}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                fontSize: "0.75rem",
+                                color: "var(--muted)",
+                                textDecoration: "underline",
+                                textDecorationStyle: "dotted",
+                                textUnderlineOffset: "3px",
+                                flexShrink: 0,
+                                transition: "color 150ms ease-out",
+                              }}
+                              onMouseEnter={(e) => {
+                                (e.currentTarget as HTMLAnchorElement).style.color = "var(--ink)";
+                              }}
+                              onMouseLeave={(e) => {
+                                (e.currentTarget as HTMLAnchorElement).style.color = "var(--muted)";
+                              }}
+                            >
+                              View on Solana Explorer
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                )}
+                </div>
               </>
             )}
           </div>

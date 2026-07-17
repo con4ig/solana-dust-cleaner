@@ -1,71 +1,165 @@
-# Solana Dust Cleaner (Open-Source Reclaim Tool)
+# Solana Dust Cleaner
 
-Solana Dust Cleaner is a secure, open-source Web3 utility designed to help Solana users close empty, unused SPL Token accounts and reclaim the SOL rent deposit (approximately **0.002039 SOL** per account) locked inside them.
+Close empty SPL token accounts and reclaim your locked SOL rent deposits - in one click.
 
-## Security & Trust First
+Every time you buy a token, receive an airdrop, or use a DeFi protocol on Solana, a new token account is created in your wallet. Each one locks **~0.002039 SOL** as a rent deposit. When those tokens reach zero balance, the account stays on-chain, silently holding your SOL hostage.
 
-Connecting your wallet and signing transactions online can feel risky. This tool is built from the ground up with **transparency and safety** as its primary design principles:
-
-1. **No Custom Smart Contracts:** This tool does not use any custom or unverified smart contracts. All operations are built entirely client-side using the official, audited **Solana System Program** and **SPL Token Program**.
-2. **Strict Zero-Balance Checks:** The Solana blockchain's official Token Program enforces that **only accounts with a balance of exactly 0 tokens can be closed**. If an account has any remaining balance, the transaction will fail automatically on-chain—your assets are mathematically secure.
-3. **Auditable Transactions:** Before you sign any transaction in your wallet (e.g., Phantom, Solflare), your wallet will show you the exact list of instructions:
-   - `CloseAccount` instructions pointing to the empty token accounts.
-   - A single `Transfer` instruction for the developer commission.
-4. **100% Open Source:** Every line of code is public, auditable, and can be run locally on your own machine.
+**Solana Dust Cleaner** finds all those empty accounts and lets you close them and get your SOL back instantly.
 
 ---
 
-## How it Works & Rent Mechanics
+## Features
 
-On the Solana blockchain, storing data requires a deposit of SOL to keep the account "rent-exempt".
-
-- Creating a standard SPL Token account (e.g., when you buy a new token on a DEX or receive an airdrop) locks exactly **2,039,280 lamports (~0.002039 SOL)**.
-- Over time, as you trade or sell tokens, you are left with many empty accounts that still hold this deposit.
-- This tool bundles the closure of these empty accounts into a single transaction. The official Token Program burns the account state and returns the locked SOL directly to your wallet.
+- **Instant wallet scan** - finds all empty (zero-balance) SPL token accounts
+- **Selective closure** - pick which accounts to close, or select all
+- **Real-time SOL estimate** - see exactly how much you'll recover before signing
+- **Non-custodial** - your keys never leave your wallet; we never touch your assets
+- **Transparent fees** - tiered commission shown before every transaction
+- **No custom contracts** - only official Solana System Program & SPL Token Program
+- **Dark UI** - clean, minimal interface designed for fast, confident action
 
 ---
 
-## Dynamic Commission Structure (Tiered Fees)
+## How It Works
 
-To maintain this tool, support open-source development, and pay for hosting, a small dynamic fee is deducted directly inside the transaction:
+```
+Connect wallet -> Scan -> Select accounts -> Sign one transaction -> Receive SOL
+```
 
-| Reclaimed SOL            | Commission Rate | Creator Fee Example                         |
-| :----------------------- | :-------------: | :------------------------------------------ |
-| **Below 0.05 SOL**       |     **5%**      | e.g., 0.0010 SOL fee on 0.020 SOL reclaimed |
-| **0.05 SOL to 0.20 SOL** |     **2%**      | e.g., 0.0020 SOL fee on 0.100 SOL reclaimed |
-| **Above 0.20 SOL**       |     **1%**      | e.g., 0.0030 SOL fee on 0.300 SOL reclaimed |
+1. **Connect** your Phantom, Solflare, or any Wallet Standard-compatible wallet.
+2. **Scan** your wallet - the app fetches all SPL token accounts with zero balance.
+3. **Select** which accounts you want to close (all selected by default).
+4. **Sign** a single bundled transaction in your wallet popup.
+5. **Receive** the unlocked SOL rent directly to your wallet, instantly on confirmation.
 
-The fee is processed via a standard `SystemProgram.transfer` instruction included in the very same transaction.
+---
+
+## Fee Structure
+
+To support open-source development, a small dynamic fee is taken inside the same transaction:
+
+| Gross Reclaimed SOL  | Fee Rate | Example                              |
+| :------------------- | :------: | :----------------------------------- |
+| Below 0.05 SOL       |  **5%**  | 0.001 SOL fee on 0.020 SOL reclaimed |
+| 0.05 SOL to 0.20 SOL |  **2%**  | 0.002 SOL fee on 0.100 SOL reclaimed |
+| Above 0.20 SOL       |  **1%**  | 0.003 SOL fee on 0.300 SOL reclaimed |
+
+The fee is processed as a standard `SystemProgram.transfer`, fully visible in your wallet's transaction preview before you sign anything.
+
+---
+
+## Security
+
+This tool is built with transparency as a core design principle:
+
+- **No custom smart contracts** - every instruction uses the official, audited Solana System Program and SPL Token Program. There is no custom bytecode to audit or trust.
+- **Enforced by the blockchain** - the SPL Token Program will reject any close instruction for an account that still holds tokens. You cannot accidentally close a funded account.
+- **Fully auditable** - your wallet (e.g. Phantom) shows the exact decoded instructions before you sign: `CloseAccount` per empty account + one `Transfer` for the fee.
+- **Open source** - all code is public and can be run locally on your own machine.
 
 ---
 
 ## Run Locally
 
-You don't have to trust our hosted website. You can clone this repository, inspect the code, and run it locally:
+You don't have to trust the hosted version. Clone it, read it, run it yourself:
 
-1. **Clone the repository:**
+```bash
+# 1. Clone the repository
+git clone https://github.com/con4ig/solana-dust-cleaner.git
+cd solana-dust-cleaner
 
-   ```bash
-   git clone https://github.com/con4ig/solana-dust-cleaner.git
-   cd solana-dust-cleaner
-   ```
+# 2. Install dependencies
+npm install --ignore-scripts
 
-2. **Install dependencies:**
+# 3. Start the dev server
+npm run dev
+```
 
-   ```bash
-   npm install --ignore-scripts
-   ```
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-3. **Start the development server:**
+> **Note:** `--ignore-scripts` prevents any postinstall scripts from running, an extra safety measure when auditing open-source code you just cloned.
 
-   ```bash
-   npm run dev
-   ```
+---
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser to run the application locally.
+## Testing on Devnet
+
+Want to test the full flow without using real SOL? Use the included helper script to create dummy empty token accounts on Solana Devnet:
+
+### Prerequisites
+
+Make sure your Phantom wallet is switched to **Devnet**:
+
+1. Open Phantom -> Settings -> Developer Settings -> enable **Testnet Mode** -> select **Solana Devnet**
+2. Get free Devnet SOL for your wallet from faucet.solana.com or solfaucet.com
+
+### Create a test empty account
+
+```bash
+npx tsx scripts/create-dust.ts <YOUR_DEVNET_WALLET_ADDRESS>
+```
+
+Example:
+
+```bash
+npx tsx scripts/create-dust.ts 81kTLKjRBJBXt4CWz8mv5Fq9mSQVQsU9pDW81rbszxFT
+```
+
+The script will:
+
+1. Attempt an automatic airdrop to a temporary payer account.
+2. If the public faucet is rate-limited (HTTP 429), it will print a temporary address and wait, just send 0.05 SOL to it from faucet.solana.com or from your own Devnet wallet.
+3. Create a random test token (Mint) on Devnet.
+4. Register an empty token account for that token under your wallet address.
+
+Once the script completes, click **Rescan** in the app and you'll see the new empty account ready to be closed. Repeat the script multiple times to create several test accounts.
+
+---
+
+## Tech Stack
+
+| Layer      | Technology                                                                 |
+| :--------- | :------------------------------------------------------------------------- |
+| Framework  | [Next.js 16](https://nextjs.org/) (App Router)                             |
+| Blockchain | [Solana Web3.js](https://github.com/solana-labs/solana-web3.js)            |
+| Token ops  | [@solana/spl-token](https://github.com/solana-labs/solana-program-library) |
+| Wallet     | [@solana/wallet-adapter](https://github.com/anza-xyz/wallet-adapter)       |
+| Network    | Solana Devnet (configurable via `NEXT_PUBLIC_SOLANA_RPC_URL`)              |
+| Styling    | Vanilla CSS (custom design tokens, no Tailwind)                            |
+| Language   | TypeScript                                                                 |
+
+---
+
+## Configuration
+
+| Environment Variable         | Default                  | Description                                  |
+| :--------------------------- | :----------------------- | :------------------------------------------- |
+| `NEXT_PUBLIC_SOLANA_RPC_URL` | Solana public Devnet RPC | Custom RPC endpoint (e.g. Helius, QuickNode) |
+
+To switch to **Mainnet**, change `WalletAdapterNetwork.Devnet` to `WalletAdapterNetwork.Mainnet` in [`src/providers/SolanaProvider.tsx`](src/providers/SolanaProvider.tsx).
+
+---
+
+## Project Structure
+
+```
+solana-dust-cleaner/
+├── src/
+│   ├── app/
+│   │   ├── page.tsx          # Main app UI & transaction logic
+│   │   ├── layout.tsx        # Root layout with providers
+│   │   └── globals.css       # Design tokens & global styles
+│   └── providers/
+│       └── SolanaProvider.tsx # Wallet adapter & network config
+└── scripts/
+    └── create-dust.ts        # Devnet testing helper script
+```
 
 ---
 
 ## License
 
-This project is open-source and released under the [MIT License](LICENSE). Feel free to audit, fork, or contribute.
+MIT - free to use, audit, fork, and contribute.
+
+---
+
+_Built for the Solana ecosystem. Not affiliated with Solana Foundation._

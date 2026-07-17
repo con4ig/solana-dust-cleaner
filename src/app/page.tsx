@@ -1,8 +1,25 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useWallet } from "@solana/wallet-adapter-react";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+import { PublicKey, Transaction, SystemProgram } from "@solana/web3.js";
+import { createCloseAccountInstruction, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+
+// ---------- config ----------
+const CREATOR_ADDRESS = "81kTLKjRBJBXt4CWz8mv5Fq9mSQVQsU9pDW81rbszxFT";
+
+const WELL_KNOWN_TOKENS: Record<string, string> = {
+  "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v": "USDC",
+  "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB": "USDT",
+  "DezXAZ8z7PnrFcPykJaaExZyF7pCm8yMc14UeLfA6fiZ": "BONK",
+  "EKpQGSJtjMFqKZ9KQGWjhss7WnCXUs55M36xWXjRTVg7": "WIF",
+  "JUPyiwrYdGVGbbJABNWdK7Xy13WCZtaAbWcNUSW5Gde": "JUP",
+  "HZ1J9tN51LLKMdCHoMDI5AbT7hRKX3774a9u23b2c79o": "PYTH",
+  "So11111111111111111111111111111111111111112": "wSOL",
+  "orcaEKTd2g64Q656XXjaDFFuYWCc48iCrrfu4qvHmST": "ORCA",
+  "MangoCzE365vcEx7Xe5JZgWKw1zCQCcRLebMCYAgHnh": "MNGO",
+};
 
 // ---------- types ----------
 interface EmptyAccount {
@@ -25,28 +42,17 @@ function formatSol(lamports: number): string {
 
 // ---------- component ----------
 export default function Home() {
-  const { connected, publicKey, disconnect, connecting } = useWallet();
+  const { connection } = useConnection();
+  const { connected, publicKey, disconnect, connecting, sendTransaction } = useWallet();
   const { setVisible } = useWalletModal();
   const [mounted, setMounted] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [scanned, setScanned] = useState(false);
+  const [reclaiming, setReclaiming] = useState(false);
+  const [accounts, setAccounts] = useState<EmptyAccount[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [isFeesOpen, setIsFeesOpen] = useState(false);
-
-  // Placeholder data — will be replaced with real RPC calls
-  const accounts: EmptyAccount[] = useMemo(
-    () =>
-      scanned
-        ? [
-            { address: "7nE1G...hX2pZ", mint: "EPjF...wkBZ", label: "USDC", rentLamports: 2_039_280 },
-            { address: "3gRtY...pLmQx", mint: "DezX...CnvB", label: "BONK", rentLamports: 2_039_280 },
-            { address: "8vBnK...rTyUw", mint: "EKpQ...7hYd", label: "WIF", rentLamports: 2_039_280 },
-            { address: "9zXcV...qAsDf", mint: "JUPy...T8yG", label: "JUP", rentLamports: 2_039_280 },
-            { address: "2eWqA...mLpOi", mint: "HZ1J...nUr9", label: "PYTH", rentLamports: 2_039_280 },
-          ]
-        : [],
-    [scanned]
-  );
+  const [isSecurityOpen, setIsSecurityOpen] = useState(false);
 
   // Derived values
   const selectedAccounts = accounts.filter((a) => selected.has(a.address));
@@ -67,17 +73,108 @@ export default function Home() {
     }
   }, [scanned, accounts]);
 
-  function handleScan() {
-    if (scanning) return;
+  async function handleScan() {
+    if (!publicKey || !connection || scanning || reclaiming) return;
     setScanning(true);
     setScanned(false);
     setSelected(new Set());
+    setAccounts([]);
 
-    // Simulate scan — replace with real RPC call
-    setTimeout(() => {
-      setScanning(false);
+    try {
+      const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
+        publicKey,
+        { programId: TOKEN_PROGRAM_ID }
+      );
+
+      const empty: EmptyAccount[] = [];
+
+      for (const accountInfo of tokenAccounts.value) {
+        const address = accountInfo.pubkey.toBase58();
+        const parsedInfo = accountInfo.account.data.parsed.info;
+        const mint = parsedInfo.mint;
+        const amount = parsedInfo.tokenAmount.amount;
+
+        if (amount === "0") {
+          const label = WELL_KNOWN_TOKENS[mint] || `${mint.slice(0, 4)}...${mint.slice(-4)}`;
+          const rentLamports = accountInfo.account.lamports;
+
+          empty.push({
+            address,
+            mint,
+            label,
+            rentLamports,
+          });
+        }
+      }
+
+      setAccounts(empty);
       setScanned(true);
-    }, 1600);
+    } catch (error) {
+      console.error("Failed to scan token accounts:", error);
+      alert("Error scanning wallet. Make sure your connection is stable.");
+    } finally {
+      setScanning(false);
+    }
+  }
+
+  async function handleReclaim() {
+    if (!publicKey || !connection || selectedAccounts.length === 0 || reclaiming) return;
+    setReclaiming(true);
+
+    try {
+      const creatorPubkey = new PublicKey(CREATOR_ADDRESS);
+      const transaction = new Transaction();
+
+      // Add close account instructions
+      for (const account of selectedAccounts) {
+        const tokenAccountPubkey = new PublicKey(account.address);
+        transaction.add(
+          createCloseAccountInstruction(
+            tokenAccountPubkey,
+            publicKey, // destination for SOL refund
+            publicKey  // owner authority
+          )
+        );
+      }
+
+      // Add transfer instruction for commission fee
+      if (feeLamports > 0) {
+        transaction.add(
+          SystemProgram.transfer({
+            fromPubkey: publicKey,
+            toPubkey: creatorPubkey,
+            lamports: feeLamports,
+          })
+        );
+      }
+
+      // Fetch blockhash & broadcast
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = publicKey;
+
+      const signature = await sendTransaction(transaction, connection);
+
+      const confirmation = await connection.confirmTransaction({
+        signature,
+        blockhash,
+        lastValidBlockHeight,
+      });
+
+      if (confirmation.value.err) {
+        throw new Error("Transaction failed on-chain.");
+      }
+
+      const closedAddresses = new Set(selectedAccounts.map((a) => a.address));
+      setAccounts((prev) => prev.filter((a) => !closedAddresses.has(a.address)));
+      setSelected(new Set());
+      alert(`Success! Successfully closed ${selectedAccounts.length} account(s) and reclaimed SOL.`);
+    } catch (error) {
+      console.error("Failed to execute transaction:", error);
+      alert(error instanceof Error ? error.message : "Failed to execute transaction.");
+    } finally {
+      setReclaiming(false);
+    }
   }
 
   function toggleAccount(address: string) {
@@ -202,11 +299,14 @@ export default function Home() {
           maxWidth: 720,
           width: "100%",
           margin: "0 auto",
-          padding: "2.5rem 1.25rem 4rem",
+          padding: "3rem 1.25rem 4rem",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
         }}
       >
         {/* Intro — always visible */}
-        <div style={{ marginBottom: "2rem" }}>
+        <div style={{ marginBottom: "2rem", textAlign: "center" }}>
           <h1
             style={{
               fontSize: "1.75rem",
@@ -225,6 +325,7 @@ export default function Home() {
               lineHeight: 1.6,
               color: "var(--muted)",
               maxWidth: "55ch",
+              margin: "0 auto",
             }}
           >
             Every Solana token account locks ~0.00203 SOL for rent.
@@ -295,8 +396,8 @@ export default function Home() {
               style={{
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "space-between",
-                gap: "1rem",
+                justifyContent: "center",
+                gap: "1.5rem",
                 flexWrap: "wrap",
                 marginBottom: "1.5rem",
               }}
@@ -326,7 +427,7 @@ export default function Home() {
 
               <button
                 onClick={handleScan}
-                disabled={scanning}
+                disabled={scanning || reclaiming}
                 style={{
                   background: scanned ? "var(--surface)" : "var(--primary)",
                   color: scanned ? "var(--ink)" : "oklch(1.000 0.000 0)",
@@ -335,8 +436,8 @@ export default function Home() {
                   padding: "0.5rem 1rem",
                   fontSize: "0.875rem",
                   fontWeight: 600,
-                  cursor: scanning ? "wait" : "pointer",
-                  opacity: scanning ? 0.6 : 1,
+                  cursor: scanning || reclaiming ? "wait" : "pointer",
+                  opacity: scanning || reclaiming ? 0.6 : 1,
                   transition: "background 200ms ease-out, opacity 200ms ease-out",
                 }}
               >
@@ -535,6 +636,7 @@ export default function Home() {
                     <div
                       style={{
                         display: "flex",
+                        justifyContent: "center",
                         flexWrap: "wrap",
                         gap: "1.5rem",
                         fontSize: "0.875rem",
@@ -554,28 +656,37 @@ export default function Home() {
 
                     {/* CTA */}
                     <button
+                      onClick={handleReclaim}
+                      disabled={reclaiming}
                       style={{
-                        background: "var(--primary)",
-                        color: "oklch(1.000 0.000 0)",
-                        border: "none",
+                        background: reclaiming ? "var(--surface)" : "var(--primary)",
+                        color: reclaiming ? "var(--muted)" : "oklch(1.000 0.000 0)",
+                        border: reclaiming ? "1px solid var(--border)" : "none",
                         borderRadius: "var(--radius-md)",
                         padding: "0.75rem 1.5rem",
                         fontSize: "0.9375rem",
                         fontWeight: 700,
-                        cursor: "pointer",
-                        transition: "background 200ms ease-out, box-shadow 200ms ease-out",
+                        cursor: reclaiming ? "wait" : "pointer",
+                        opacity: reclaiming ? 0.6 : 1,
+                        transition: "background 200ms ease-out, box-shadow 200ms ease-out, opacity 200ms ease-out",
                         width: "100%",
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = "var(--primary-hover)";
-                        e.currentTarget.style.boxShadow = "0 0 0 3px var(--primary-subtle)";
+                        if (!reclaiming) {
+                          e.currentTarget.style.background = "var(--primary-hover)";
+                          e.currentTarget.style.boxShadow = "0 0 0 3px var(--primary-subtle)";
+                        }
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.background = "var(--primary)";
-                        e.currentTarget.style.boxShadow = "none";
+                        if (!reclaiming) {
+                          e.currentTarget.style.background = "var(--primary)";
+                          e.currentTarget.style.boxShadow = "none";
+                        }
                       }}
                     >
-                      Close {selectedAccounts.length} account{selectedAccounts.length !== 1 ? "s" : ""} and reclaim {formatSol(netLamports)} SOL
+                      {reclaiming
+                        ? "Confirming transaction..."
+                        : `Close ${selectedAccounts.length} account${selectedAccounts.length !== 1 ? "s" : ""} and reclaim ${formatSol(netLamports)} SOL`}
                     </button>
                   </div>
                 )}
@@ -584,43 +695,87 @@ export default function Home() {
           </div>
         )}
 
-        {/* ── Fee transparency ── */}
-        <div style={{ marginTop: "3rem" }}>
-          <button
-            onClick={() => setIsFeesOpen(!isFeesOpen)}
-            style={{
-              background: "none",
-              border: "none",
-              padding: 0,
-              color: "var(--ink)",
-              fontWeight: 600,
-              fontSize: "0.875rem",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "0.375rem",
-              marginBottom: "0.75rem",
-            }}
-          >
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+        {/* ── Collapsible Utility Disclosures ── */}
+        <div style={{ marginTop: "3.5rem", borderTop: "1px solid var(--border)", paddingTop: "1.5rem" }}>
+          <div style={{ display: "flex", justifyContent: "center", gap: "1.5rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
+            <button
+              onClick={() => {
+                setIsFeesOpen(!isFeesOpen);
+                setIsSecurityOpen(false);
+              }}
               style={{
-                transform: isFeesOpen ? "rotate(90deg)" : "rotate(0deg)",
-                transition: "transform 250ms cubic-bezier(0.16, 1, 0.3, 1)",
+                background: "none",
+                border: "none",
+                padding: 0,
+                color: isFeesOpen ? "var(--ink)" : "var(--muted)",
+                fontWeight: 600,
+                fontSize: "0.8125rem",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.375rem",
+                transition: "color 150ms ease-out",
               }}
             >
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-            <span>How fees work</span>
-          </button>
-          
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{
+                  transform: isFeesOpen ? "rotate(90deg)" : "rotate(0deg)",
+                  transition: "transform 250ms cubic-bezier(0.16, 1, 0.3, 1)",
+                }}
+              >
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+              <span>How fees work</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setIsSecurityOpen(!isSecurityOpen);
+                setIsFeesOpen(false);
+              }}
+              style={{
+                background: "none",
+                border: "none",
+                padding: 0,
+                color: isSecurityOpen ? "var(--ink)" : "var(--muted)",
+                fontWeight: 600,
+                fontSize: "0.8125rem",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.375rem",
+                transition: "color 150ms ease-out",
+              }}
+            >
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{
+                  transform: isSecurityOpen ? "rotate(90deg)" : "rotate(0deg)",
+                  transition: "transform 250ms cubic-bezier(0.16, 1, 0.3, 1)",
+                }}
+              >
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+              <span>Security & Transparency</span>
+            </button>
+          </div>
+
+          {/* How fees work content */}
           <div
             style={{
               display: "grid",
@@ -629,8 +784,8 @@ export default function Home() {
               overflow: "hidden",
             }}
           >
-            <div style={{ minHeight: 0 }}>
-              <p style={{ lineHeight: 1.7, maxWidth: "55ch", marginBottom: "1rem", fontSize: "0.8125rem", color: "var(--muted)" }}>
+            <div style={{ minHeight: 0, textAlign: "center" }}>
+              <p style={{ lineHeight: 1.7, maxWidth: "55ch", marginBottom: "1rem", fontSize: "0.8125rem", color: "var(--muted)", margin: "0 auto 1rem" }}>
                 A small fee is deducted from the reclaimed rent directly inside the transaction.
                 The rate depends on the total amount recovered:
               </p>
@@ -641,7 +796,7 @@ export default function Home() {
                   borderCollapse: "collapse",
                   fontSize: "0.8125rem",
                   color: "var(--muted)",
-                  marginBottom: "1rem",
+                  margin: "0 auto 1.25rem",
                 }}
               >
                 <thead>
@@ -671,6 +826,53 @@ export default function Home() {
               </table>
             </div>
           </div>
+
+          {/* Security & Transparency content */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateRows: isSecurityOpen ? "1fr" : "0fr",
+              transition: "grid-template-rows 250ms cubic-bezier(0.16, 1, 0.3, 1)",
+              overflow: "hidden",
+            }}
+          >
+            <div style={{ minHeight: 0 }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  textAlign: "center",
+                  gap: "1.25rem",
+                  fontSize: "0.8125rem",
+                  lineHeight: 1.6,
+                  color: "var(--muted)",
+                  maxWidth: "60ch",
+                  margin: "0 auto",
+                  paddingBottom: "1.25rem",
+                }}
+              >
+                <div>
+                  <strong style={{ color: "var(--ink)", display: "block", marginBottom: "0.25rem" }}>
+                    No custom smart contracts
+                  </strong>
+                  All transactions are constructed client-side using audited, official Solana programs. The code is entirely open-source and auditable.
+                </div>
+                <div>
+                  <strong style={{ color: "var(--ink)", display: "block", marginBottom: "0.25rem" }}>
+                    Mathematical balance checks
+                  </strong>
+                  Under Solana network rules, a token account cannot be closed if it holds any balance. Your active tokens cannot be lost or spent by this tool.
+                </div>
+                <div>
+                  <strong style={{ color: "var(--ink)", display: "block", marginBottom: "0.25rem" }}>
+                    Full wallet validation
+                  </strong>
+                  Every action is visible on your wallet's approval screen. You can inspect the exact close instructions and fee transfers before signing.
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
 
@@ -679,7 +881,9 @@ export default function Home() {
         style={{
           borderTop: "1px solid var(--border)",
           padding: "1.25rem",
-          textAlign: "center",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
           fontSize: "0.75rem",
           color: "var(--faint)",
         }}

@@ -483,6 +483,11 @@ export default function Home() {
                     0% { transform: translateX(-100%); }
                     100% { transform: translateX(350%); }
                   }
+                  @keyframes pulse-closing {
+                    0% { opacity: 0.4; }
+                    50% { opacity: 0.15; }
+                    100% { opacity: 0.4; }
+                  }
                 `}</style>
               </div>
             )}
@@ -702,13 +707,18 @@ export default function Home() {
                           gap: "0.75rem",
                           padding: "0.75rem 1rem",
                           borderBottom: "1px solid var(--border)",
-                          cursor: "pointer",
-                          background: isSelected ? "oklch(1.000 0.000 0 / 0.06)" : "transparent",
-                          transition: "all 300ms cubic-bezier(0.4, 0, 0.2, 1)",
-                          opacity: closingAccounts.has(account.address) ? 0 : 1,
-                          transform: closingAccounts.has(account.address)
-                            ? "scale(0.96) translateY(-4px)"
-                            : "scale(1) translateY(0)",
+                          cursor: closingAccounts.has(account.address) ? "default" : "pointer",
+                          background:
+                            isSelected && !closingAccounts.has(account.address)
+                              ? "oklch(1.000 0.000 0 / 0.06)"
+                              : "transparent",
+                          transition: "background 300ms ease-out, opacity 300ms ease-out",
+                          opacity: closingAccounts.has(account.address) ? 0.4 : 1,
+                          filter: closingAccounts.has(account.address) ? "grayscale(100%)" : "none",
+                          animation: closingAccounts.has(account.address)
+                            ? "pulse-closing 1.5s infinite ease-in-out"
+                            : "none",
+                          pointerEvents: closingAccounts.has(account.address) ? "none" : "auto",
                         }}
                         onMouseEnter={(e) => {
                           if (!isSelected)

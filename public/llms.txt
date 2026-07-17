@@ -1,0 +1,22 @@
+# Solana Dust Cleaner
+
+A high-performance, open-source, client-side dApp to scan and close empty Solana token accounts and reclaim locked SOL rent deposits.
+
+## Key Info
+- **URL**: https://solanadustcleaner.com
+- **Repository**: https://github.com/con4ig/solana-dust-cleaner
+- **License**: MIT
+- **Architecture**: 100% client-side Next.js dApp. No custom smart contracts.
+
+## Security & Transparency
+- All transaction construction happens client-side using audited, official Solana programs.
+- Token accounts are verified mathematically to hold a balance of exactly zero before closure. Active token balances cannot be lost.
+- All instructions (including the rent reclaim and fee transfer) are fully inspectable in the wallet approval modal before signature.
+
+## Fee Structure
+Fees are split dynamically directly inside the client-side generated transaction:
+- Under 0.05 SOL reclaimed: 5% fee to commission address.
+- 0.05 to 0.20 SOL reclaimed: 2% fee to commission address.
+- Above 0.20 SOL reclaimed: 1% fee to commission address.
+
+Commission Address: `81kTLKjRBJBXt4CWz8mv5Fq9mSQVQsU9pDW81rbszxFT`

@@ -118,6 +118,11 @@ export default function Home() {
       console.error("Failed to scan token accounts:", error);
       alert("Error scanning wallet. Make sure your connection is stable.");
     } finally {
+      const elapsed = Date.now() - startTime;
+      const minDelay = 1500;
+      if (elapsed < minDelay) {
+        await new Promise((resolve) => setTimeout(resolve, minDelay - elapsed));
+      }
       setScanning(false);
     }
   }
@@ -488,6 +493,10 @@ export default function Home() {
                     50% { opacity: 0.15; }
                     100% { opacity: 0.4; }
                   }
+                  @keyframes fade-in-up {
+                    0% { opacity: 0; transform: translateY(10px); }
+                    100% { opacity: 1; transform: translateY(0); }
+                  }
                 `}</style>
               </div>
             )}
@@ -648,7 +657,11 @@ export default function Home() {
             )}
 
             {scanned && accounts.length > 0 && (
-              <>
+              <div
+                style={{
+                  animation: "fade-in-up 500ms cubic-bezier(0.4, 0, 0.2, 1)",
+                }}
+              >
                 {/* Account list */}
                 <div
                   style={{
@@ -939,7 +952,7 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-              </>
+              </div>
             )}
           </div>
         )}

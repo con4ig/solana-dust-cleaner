@@ -654,7 +654,7 @@ export default function Home() {
                         type="checkbox"
                         checked={selected.size === accounts.length}
                         onChange={toggleAll}
-                        style={{ accentColor: "oklch(0.620 0.120 185)" }}
+                        style={{ accentColor: "var(--ink)" }}
                       />
                       Account
                     </label>
@@ -676,7 +676,7 @@ export default function Home() {
                           padding: "0.75rem 1rem",
                           borderBottom: "1px solid var(--border)",
                           cursor: "pointer",
-                          background: isSelected ? "var(--primary-subtle)" : "transparent",
+                          background: isSelected ? "oklch(1.000 0.000 0 / 0.06)" : "transparent",
                           transition: "background 150ms ease-out",
                         }}
                         onMouseEnter={(e) => {
@@ -685,7 +685,7 @@ export default function Home() {
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.background = isSelected
-                            ? "var(--primary-subtle)"
+                            ? "oklch(1.000 0.000 0 / 0.06)"
                             : "transparent";
                         }}
                       >
@@ -693,7 +693,7 @@ export default function Home() {
                           type="checkbox"
                           checked={isSelected}
                           onChange={() => toggleAccount(account.address)}
-                          style={{ accentColor: "oklch(0.620 0.120 185)" }}
+                          style={{ accentColor: "var(--ink)" }}
                         />
                         <div style={{ minWidth: 0 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -725,7 +725,7 @@ export default function Home() {
                             fontFamily: "var(--font-mono)",
                             fontSize: "0.8125rem",
                             fontWeight: 500,
-                            color: "var(--success)",
+                            color: "var(--ink)",
                             whiteSpace: "nowrap",
                           }}
                         >

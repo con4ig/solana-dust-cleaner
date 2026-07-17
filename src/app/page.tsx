@@ -310,6 +310,69 @@ export default function Home() {
             >
               {connecting ? "Connecting..." : "Connect Wallet"}
             </button>
+            <button
+              onClick={() => {
+                setAccounts([
+                  {
+                    address: "Demo111111111111111111111111111111111111111",
+                    mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                    label: "USDC",
+                    rentLamports: 2039280,
+                  },
+                  {
+                    address: "Demo222222222222222222222222222222222222222",
+                    mint: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+                    label: "USDT",
+                    rentLamports: 2039280,
+                  },
+                  {
+                    address: "Demo333333333333333333333333333333333333333",
+                    mint: "DezXAZ8z7PnrFcPykJaaExZyF7pCm8yMc14UeLfA6fiZ",
+                    label: "BONK",
+                    rentLamports: 2039280,
+                  },
+                  {
+                    address: "Demo444444444444444444444444444444444444444",
+                    mint: "EKpQGSJtjMFqKZ9KQGWjhss7WnCXUs55M36xWXjRTVg7",
+                    label: "WIF",
+                    rentLamports: 2039280,
+                  },
+                  {
+                    address: "Demo555555555555555555555555555555555555555",
+                    mint: "JUPyiwrYdGVGbbJABNWdK7Xy13WCZtaAbWcNUSW5Gde",
+                    label: "JUP",
+                    rentLamports: 2039280,
+                  },
+                ]);
+                setScanned(true);
+                setIsDemoMode(true);
+                setLastSignature(null);
+              }}
+              style={{
+                background: "none",
+                border: "none",
+                padding: 0,
+                color: "var(--faint)",
+                fontSize: "0.75rem",
+                cursor: "pointer",
+                marginTop: "1.25rem",
+                display: "block",
+                marginLeft: "auto",
+                marginRight: "auto",
+                textDecoration: "underline",
+                textDecorationStyle: "dotted",
+                textUnderlineOffset: "3px",
+                transition: "color 150ms ease-out",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "var(--muted)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "var(--faint)";
+              }}
+            >
+              Preview with demo data
+            </button>
           </div>
         ) : (
           /* ── Connected flow ── */
@@ -487,9 +550,68 @@ export default function Home() {
                 }}
               >
                 <p style={{ fontWeight: 600, marginBottom: "0.25rem" }}>No empty accounts found</p>
-                <p style={{ color: "var(--muted)", fontSize: "0.875rem" }}>
+                <p style={{ color: "var(--muted)", fontSize: "0.875rem", marginBottom: "1.25rem" }}>
                   All your token accounts have a balance, or have already been closed.
                 </p>
+                <button
+                  onClick={() => {
+                    setAccounts([
+                      {
+                        address: "Demo111111111111111111111111111111111111111",
+                        mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                        label: "USDC",
+                        rentLamports: 2039280,
+                      },
+                      {
+                        address: "Demo222222222222222222222222222222222222222",
+                        mint: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+                        label: "USDT",
+                        rentLamports: 2039280,
+                      },
+                      {
+                        address: "Demo333333333333333333333333333333333333333",
+                        mint: "DezXAZ8z7PnrFcPykJaaExZyF7pCm8yMc14UeLfA6fiZ",
+                        label: "BONK",
+                        rentLamports: 2039280,
+                      },
+                      {
+                        address: "Demo444444444444444444444444444444444444444",
+                        mint: "EKpQGSJtjMFqKZ9KQGWjhss7WnCXUs55M36xWXjRTVg7",
+                        label: "WIF",
+                        rentLamports: 2039280,
+                      },
+                      {
+                        address: "Demo555555555555555555555555555555555555555",
+                        mint: "JUPyiwrYdGVGbbJABNWdK7Xy13WCZtaAbWcNUSW5Gde",
+                        label: "JUP",
+                        rentLamports: 2039280,
+                      },
+                    ]);
+                    setScanned(true);
+                    setIsDemoMode(true);
+                    setLastSignature(null);
+                  }}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    padding: 0,
+                    color: "var(--faint)",
+                    fontSize: "0.75rem",
+                    cursor: "pointer",
+                    textDecoration: "underline",
+                    textDecorationStyle: "dotted",
+                    textUnderlineOffset: "3px",
+                    transition: "color 150ms ease-out",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = "var(--muted)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = "var(--faint)";
+                  }}
+                >
+                  Preview with demo data
+                </button>
               </div>
             )}
 

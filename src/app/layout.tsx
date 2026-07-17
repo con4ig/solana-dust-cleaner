@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://solanadustcleaner.com"),
-  title: "Solana Dust Cleaner — Reclaim Locked SOL Rent",
+  title: "Solana Dust Cleaner - Reclaim Locked SOL Rent",
   description:
     "Close empty SPL token accounts and reclaim your locked SOL rent deposits. Free, transparent, open-source tool for the Solana community.",
   keywords: [
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Solana Dust Cleaner Community" }],
   openGraph: {
-    title: "Solana Dust Cleaner — Reclaim Locked SOL Rent",
+    title: "Solana Dust Cleaner - Reclaim Locked SOL Rent",
     description:
       "Close empty SPL token accounts and reclaim your locked SOL rent deposits. Free, transparent, open-source tool for the Solana community.",
     url: "https://solanadustcleaner.com",
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Solana Dust Cleaner — Reclaim Locked SOL Rent",
+    title: "Solana Dust Cleaner - Reclaim Locked SOL Rent",
     description:
       "Close empty SPL token accounts and reclaim your locked SOL rent deposits. Free, transparent, open-source tool for the Solana community.",
   },

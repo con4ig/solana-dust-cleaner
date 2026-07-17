@@ -8,7 +8,8 @@ import { PublicKey, Transaction, SystemProgram } from "@solana/web3.js";
 import { createCloseAccountInstruction, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 
 // ---------- config ----------
-const CREATOR_ADDRESS = "81kTLKjRBJBXt4CWz8mv5Fq9mSQVQsU9pDW81rbszxFT";
+const CREATOR_ADDRESS =
+  process.env.NEXT_PUBLIC_CREATOR_ADDRESS || "81kTLKjRBJBXt4CWz8mv5Fq9mSQVQsU9pDW81rbszxFT";
 
 const WELL_KNOWN_TOKENS: Record<string, string> = {
   EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: "USDC",
@@ -57,7 +58,6 @@ export default function Home() {
   const [lastSignature, setLastSignature] = useState<string | null>(null);
   const [lastClosedCount, setLastClosedCount] = useState(0);
   const [lastReclaimedLamports, setLastReclaimedLamports] = useState(0);
-  const [isDemoMode, setIsDemoMode] = useState(false);
   const [closingAccounts, setClosingAccounts] = useState<Set<string>>(new Set());
 
   // Derived values
@@ -131,23 +131,6 @@ export default function Home() {
 
   async function handleReclaim() {
     if (!publicKey || !connection || selectedAccounts.length === 0 || reclaiming) return;
-
-    // Demo mode: simulate success without real transaction
-    if (isDemoMode) {
-      setReclaiming(true);
-      setClosingAccounts(new Set(selectedAccounts.map((a) => a.address)));
-
-      setTimeout(() => {
-        setLastClosedCount(selectedAccounts.length);
-        setLastReclaimedLamports(netLamports);
-        setLastSignature("DEMO_SIMULATION");
-        setAccounts((prev) => prev.filter((a) => !selected.has(a.address)));
-        setSelected(new Set());
-        setClosingAccounts(new Set());
-        setReclaiming(false);
-      }, 1200);
-      return;
-    }
 
     setReclaiming(true);
 
@@ -331,69 +314,6 @@ export default function Home() {
             >
               {connecting ? "Connecting..." : "Connect Wallet"}
             </button>
-            <button
-              onClick={() => {
-                setAccounts([
-                  {
-                    address: "Demo111111111111111111111111111111111111111",
-                    mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-                    label: "USDC",
-                    rentLamports: 2039280,
-                  },
-                  {
-                    address: "Demo222222222222222222222222222222222222222",
-                    mint: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
-                    label: "USDT",
-                    rentLamports: 2039280,
-                  },
-                  {
-                    address: "Demo333333333333333333333333333333333333333",
-                    mint: "DezXAZ8z7PnrFcPykJaaExZyF7pCm8yMc14UeLfA6fiZ",
-                    label: "BONK",
-                    rentLamports: 2039280,
-                  },
-                  {
-                    address: "Demo444444444444444444444444444444444444444",
-                    mint: "EKpQGSJtjMFqKZ9KQGWjhss7WnCXUs55M36xWXjRTVg7",
-                    label: "WIF",
-                    rentLamports: 2039280,
-                  },
-                  {
-                    address: "Demo555555555555555555555555555555555555555",
-                    mint: "JUPyiwrYdGVGbbJABNWdK7Xy13WCZtaAbWcNUSW5Gde",
-                    label: "JUP",
-                    rentLamports: 2039280,
-                  },
-                ]);
-                setScanned(true);
-                setIsDemoMode(true);
-                setLastSignature(null);
-              }}
-              style={{
-                background: "none",
-                border: "none",
-                padding: 0,
-                color: "var(--faint)",
-                fontSize: "0.75rem",
-                cursor: "pointer",
-                marginTop: "1.25rem",
-                display: "block",
-                marginLeft: "auto",
-                marginRight: "auto",
-                textDecoration: "underline",
-                textDecorationStyle: "dotted",
-                textUnderlineOffset: "3px",
-                transition: "color 150ms ease-out",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "var(--muted)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = "var(--faint)";
-              }}
-            >
-              Preview with demo data
-            </button>
           </div>
         ) : (
           /* ── Connected flow ── */
@@ -519,65 +439,6 @@ export default function Home() {
                 <p style={{ marginBottom: "1.25rem" }}>
                   Press &quot;Scan wallet&quot; to find empty token accounts.
                 </p>
-                <button
-                  onClick={() => {
-                    setAccounts([
-                      {
-                        address: "Demo111111111111111111111111111111111111111",
-                        mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-                        label: "USDC",
-                        rentLamports: 2039280,
-                      },
-                      {
-                        address: "Demo222222222222222222222222222222222222222",
-                        mint: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
-                        label: "USDT",
-                        rentLamports: 2039280,
-                      },
-                      {
-                        address: "Demo333333333333333333333333333333333333333",
-                        mint: "DezXAZ8z7PnrFcPykJaaExZyF7pCm8yMc14UeLfA6fiZ",
-                        label: "BONK",
-                        rentLamports: 2039280,
-                      },
-                      {
-                        address: "Demo444444444444444444444444444444444444444",
-                        mint: "EKpQGSJtjMFqKZ9KQGWjhss7WnCXUs55M36xWXjRTVg7",
-                        label: "WIF",
-                        rentLamports: 2039280,
-                      },
-                      {
-                        address: "Demo555555555555555555555555555555555555555",
-                        mint: "JUPyiwrYdGVGbbJABNWdK7Xy13WCZtaAbWcNUSW5Gde",
-                        label: "JUP",
-                        rentLamports: 2039280,
-                      },
-                    ]);
-                    setScanned(true);
-                    setIsDemoMode(true);
-                    setLastSignature(null);
-                  }}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    padding: 0,
-                    color: "var(--faint)",
-                    fontSize: "0.75rem",
-                    cursor: "pointer",
-                    textDecoration: "underline",
-                    textDecorationStyle: "dotted",
-                    textUnderlineOffset: "3px",
-                    transition: "color 150ms ease-out",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.color = "var(--muted)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.color = "var(--faint)";
-                  }}
-                >
-                  Preview with demo data
-                </button>
               </div>
             )}
 
@@ -603,70 +464,9 @@ export default function Home() {
                   <p style={{ fontWeight: 600, marginBottom: "0.25rem" }}>
                     No empty accounts found
                   </p>
-                  <p
-                    style={{ color: "var(--muted)", fontSize: "0.875rem", marginBottom: "1.25rem" }}
-                  >
+                  <p style={{ color: "var(--muted)", fontSize: "0.875rem" }}>
                     All your token accounts have a balance, or have already been closed.
                   </p>
-                  <button
-                    onClick={() => {
-                      setAccounts([
-                        {
-                          address: "Demo111111111111111111111111111111111111111",
-                          mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-                          label: "USDC",
-                          rentLamports: 2039280,
-                        },
-                        {
-                          address: "Demo222222222222222222222222222222222222222",
-                          mint: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
-                          label: "USDT",
-                          rentLamports: 2039280,
-                        },
-                        {
-                          address: "Demo333333333333333333333333333333333333333",
-                          mint: "DezXAZ8z7PnrFcPykJaaExZyF7pCm8yMc14UeLfA6fiZ",
-                          label: "BONK",
-                          rentLamports: 2039280,
-                        },
-                        {
-                          address: "Demo444444444444444444444444444444444444444",
-                          mint: "EKpQGSJtjMFqKZ9KQGWjhss7WnCXUs55M36xWXjRTVg7",
-                          label: "WIF",
-                          rentLamports: 2039280,
-                        },
-                        {
-                          address: "Demo555555555555555555555555555555555555555",
-                          mint: "JUPyiwrYdGVGbbJABNWdK7Xy13WCZtaAbWcNUSW5Gde",
-                          label: "JUP",
-                          rentLamports: 2039280,
-                        },
-                      ]);
-                      setScanned(true);
-                      setIsDemoMode(true);
-                      setLastSignature(null);
-                    }}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      padding: 0,
-                      color: "var(--faint)",
-                      fontSize: "0.75rem",
-                      cursor: "pointer",
-                      textDecoration: "underline",
-                      textDecorationStyle: "dotted",
-                      textUnderlineOffset: "3px",
-                      transition: "color 150ms ease-out",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.color = "var(--muted)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = "var(--faint)";
-                    }}
-                  >
-                    Preview with demo data
-                  </button>
                 </div>
 
                 {/* ── Success banner (persisted when all accounts closed) ── */}
@@ -685,60 +485,34 @@ export default function Home() {
                     }}
                   >
                     <span style={{ fontSize: "0.8125rem", color: "var(--muted)" }}>
-                      {isDemoMode && (
-                        <span
-                          style={{
-                            fontSize: "0.6875rem",
-                            fontWeight: 600,
-                            color: "var(--faint)",
-                            letterSpacing: "0.04em",
-                            textTransform: "uppercase",
-                            marginRight: "0.5rem",
-                          }}
-                        >
-                          [demo]
-                        </span>
-                      )}
                       Closed <strong style={{ color: "var(--ink)" }}>{lastClosedCount}</strong>{" "}
-                      account{lastClosedCount !== 1 ? "s" : ""} &mdash; reclaimed{" "}
+                      account{lastClosedCount !== 1 ? "s" : ""}, reclaimed{" "}
                       <strong style={{ color: "var(--primary)" }}>
                         {formatSol(lastReclaimedLamports)} SOL
                       </strong>
                     </span>
-                    {isDemoMode ? (
-                      <span
-                        style={{
-                          fontSize: "0.75rem",
-                          color: "var(--faint)",
-                          flexShrink: 0,
-                        }}
-                      >
-                        View on Solana Explorer
-                      </span>
-                    ) : (
-                      <a
-                        href={`https://explorer.solana.com/tx/${lastSignature}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          fontSize: "0.75rem",
-                          color: "var(--muted)",
-                          textDecoration: "underline",
-                          textDecorationStyle: "dotted",
-                          textUnderlineOffset: "3px",
-                          flexShrink: 0,
-                          transition: "color 150ms ease-out",
-                        }}
-                        onMouseEnter={(e) => {
-                          (e.currentTarget as HTMLAnchorElement).style.color = "var(--ink)";
-                        }}
-                        onMouseLeave={(e) => {
-                          (e.currentTarget as HTMLAnchorElement).style.color = "var(--muted)";
-                        }}
-                      >
-                        View on Solana Explorer
-                      </a>
-                    )}
+                    <a
+                      href={`https://explorer.solana.com/tx/${lastSignature}?cluster=devnet`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        fontSize: "0.75rem",
+                        color: "var(--muted)",
+                        textDecoration: "underline",
+                        textDecorationStyle: "dotted",
+                        textUnderlineOffset: "3px",
+                        flexShrink: 0,
+                        transition: "color 150ms ease-out",
+                      }}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLAnchorElement).style.color = "var(--ink)";
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLAnchorElement).style.color = "var(--muted)";
+                      }}
+                    >
+                      View on Solana Explorer
+                    </a>
                   </div>
                 )}
               </div>
@@ -980,61 +754,35 @@ export default function Home() {
                           }}
                         >
                           <span style={{ fontSize: "0.8125rem", color: "var(--muted)" }}>
-                            {isDemoMode && (
-                              <span
-                                style={{
-                                  fontSize: "0.6875rem",
-                                  fontWeight: 600,
-                                  color: "var(--faint)",
-                                  letterSpacing: "0.04em",
-                                  textTransform: "uppercase",
-                                  marginRight: "0.5rem",
-                                }}
-                              >
-                                [demo]
-                              </span>
-                            )}
                             Closed{" "}
                             <strong style={{ color: "var(--ink)" }}>{lastClosedCount}</strong>{" "}
-                            account{lastClosedCount !== 1 ? "s" : ""} &mdash; reclaimed{" "}
+                            account{lastClosedCount !== 1 ? "s" : ""}, reclaimed{" "}
                             <strong style={{ color: "var(--primary)" }}>
                               {formatSol(lastReclaimedLamports)} SOL
                             </strong>
                           </span>
-                          {isDemoMode ? (
-                            <span
-                              style={{
-                                fontSize: "0.75rem",
-                                color: "var(--faint)",
-                                flexShrink: 0,
-                              }}
-                            >
-                              View on Solana Explorer
-                            </span>
-                          ) : (
-                            <a
-                              href={`https://explorer.solana.com/tx/${lastSignature}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{
-                                fontSize: "0.75rem",
-                                color: "var(--muted)",
-                                textDecoration: "underline",
-                                textDecorationStyle: "dotted",
-                                textUnderlineOffset: "3px",
-                                flexShrink: 0,
-                                transition: "color 150ms ease-out",
-                              }}
-                              onMouseEnter={(e) => {
-                                (e.currentTarget as HTMLAnchorElement).style.color = "var(--ink)";
-                              }}
-                              onMouseLeave={(e) => {
-                                (e.currentTarget as HTMLAnchorElement).style.color = "var(--muted)";
-                              }}
-                            >
-                              View on Solana Explorer
-                            </a>
-                          )}
+                          <a
+                            href={`https://explorer.solana.com/tx/${lastSignature}?cluster=devnet`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              fontSize: "0.75rem",
+                              color: "var(--muted)",
+                              textDecoration: "underline",
+                              textDecorationStyle: "dotted",
+                              textUnderlineOffset: "3px",
+                              flexShrink: 0,
+                              transition: "color 150ms ease-out",
+                            }}
+                            onMouseEnter={(e) => {
+                              (e.currentTarget as HTMLAnchorElement).style.color = "var(--ink)";
+                            }}
+                            onMouseLeave={(e) => {
+                              (e.currentTarget as HTMLAnchorElement).style.color = "var(--muted)";
+                            }}
+                          >
+                            View on Solana Explorer
+                          </a>
                         </div>
                       )}
                     </div>
@@ -1300,7 +1048,21 @@ export default function Home() {
           color: "var(--faint)",
         }}
       >
-        Open-source tool for the Solana community.
+        <a
+          href="https://github.com/con4ig/solana-dust-cleaner"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            color: "var(--faint)",
+            textDecoration: "none",
+            transition: "color 150ms ease",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = "var(--muted)")}
+          onMouseLeave={(e) => (e.currentTarget.style.color = "var(--faint)")}
+        >
+          Open-source
+        </a>
+        &nbsp;tool for the Solana community.
       </footer>
     </div>
   );

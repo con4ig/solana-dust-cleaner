@@ -14,10 +14,16 @@ interface SolanaProviderProps {
 }
 
 export const SolanaProvider: FC<SolanaProviderProps> = ({ children }) => {
-  // Set the network (defaults to Devnet, but easily switchable to Mainnet)
-  const network = WalletAdapterNetwork.Devnet;
+  // Set the network (defaults to Devnet, but easily switchable to Mainnet via env)
+  const network = useMemo(() => {
+    const envNetwork = process.env.NEXT_PUBLIC_SOLANA_NETWORK;
+    if (envNetwork === "mainnet-beta" || envNetwork === "mainnet") {
+      return WalletAdapterNetwork.Mainnet;
+    }
+    return WalletAdapterNetwork.Devnet;
+  }, []);
 
-  // Configure custom RPC or fallback to public devnet RPC
+  // Configure custom RPC or fallback to public RPC
   const endpoint = useMemo(() => {
     return process.env.NEXT_PUBLIC_SOLANA_RPC_URL || clusterApiUrl(network);
   }, [network]);

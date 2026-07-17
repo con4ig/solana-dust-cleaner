@@ -54,6 +54,10 @@ export default function Home() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [isFeesOpen, setIsFeesOpen] = useState(false);
   const [isSecurityOpen, setIsSecurityOpen] = useState(false);
+  const [lastSignature, setLastSignature] = useState<string | null>(null);
+  const [lastClosedCount, setLastClosedCount] = useState(0);
+  const [lastReclaimedLamports, setLastReclaimedLamports] = useState(0);
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   // Derived values
   const selectedAccounts = accounts.filter((a) => selected.has(a.address));
@@ -119,6 +123,17 @@ export default function Home() {
 
   async function handleReclaim() {
     if (!publicKey || !connection || selectedAccounts.length === 0 || reclaiming) return;
+
+    // Demo mode: simulate success without real transaction
+    if (isDemoMode) {
+      setLastClosedCount(selectedAccounts.length);
+      setLastReclaimedLamports(netLamports);
+      setLastSignature("DEMO_SIMULATION");
+      setAccounts((prev) => prev.filter((a) => !selected.has(a.address)));
+      setSelected(new Set());
+      return;
+    }
+
     setReclaiming(true);
 
     try {
@@ -166,11 +181,11 @@ export default function Home() {
       }
 
       const closedAddresses = new Set(selectedAccounts.map((a) => a.address));
+      setLastClosedCount(selectedAccounts.length);
+      setLastReclaimedLamports(netLamports);
+      setLastSignature(signature);
       setAccounts((prev) => prev.filter((a) => !closedAddresses.has(a.address)));
       setSelected(new Set());
-      alert(
-        `Success! Successfully closed ${selectedAccounts.length} account(s) and reclaimed SOL.`
-      );
     } catch (error) {
       console.error("Failed to execute transaction:", error);
       alert(error instanceof Error ? error.message : "Failed to execute transaction.");
@@ -395,7 +410,68 @@ export default function Home() {
                   fontSize: "0.9375rem",
                 }}
               >
-                Press &quot;Scan wallet&quot; to find empty token accounts.
+                <p style={{ marginBottom: "1.25rem" }}>
+                  Press &quot;Scan wallet&quot; to find empty token accounts.
+                </p>
+                <button
+                  onClick={() => {
+                    setAccounts([
+                      {
+                        address: "Demo111111111111111111111111111111111111111",
+                        mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                        label: "USDC",
+                        rentLamports: 2039280,
+                      },
+                      {
+                        address: "Demo222222222222222222222222222222222222222",
+                        mint: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+                        label: "USDT",
+                        rentLamports: 2039280,
+                      },
+                      {
+                        address: "Demo333333333333333333333333333333333333333",
+                        mint: "DezXAZ8z7PnrFcPykJaaExZyF7pCm8yMc14UeLfA6fiZ",
+                        label: "BONK",
+                        rentLamports: 2039280,
+                      },
+                      {
+                        address: "Demo444444444444444444444444444444444444444",
+                        mint: "EKpQGSJtjMFqKZ9KQGWjhss7WnCXUs55M36xWXjRTVg7",
+                        label: "WIF",
+                        rentLamports: 2039280,
+                      },
+                      {
+                        address: "Demo555555555555555555555555555555555555555",
+                        mint: "JUPyiwrYdGVGbbJABNWdK7Xy13WCZtaAbWcNUSW5Gde",
+                        label: "JUP",
+                        rentLamports: 2039280,
+                      },
+                    ]);
+                    setScanned(true);
+                    setIsDemoMode(true);
+                    setLastSignature(null);
+                  }}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    padding: 0,
+                    color: "var(--faint)",
+                    fontSize: "0.75rem",
+                    cursor: "pointer",
+                    textDecoration: "underline",
+                    textDecorationStyle: "dotted",
+                    textUnderlineOffset: "3px",
+                    transition: "color 150ms ease-out",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = "var(--muted)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = "var(--faint)";
+                  }}
+                >
+                  Preview with demo data
+                </button>
               </div>
             )}
 
@@ -609,6 +685,80 @@ export default function Home() {
                         ? "Confirming transaction..."
                         : `Close ${selectedAccounts.length} account${selectedAccounts.length !== 1 ? "s" : ""} and reclaim ${formatSol(netLamports)} SOL`}
                     </button>
+
+                    {/* ── Success banner ── */}
+                    {lastSignature && (
+                      <div
+                        style={{
+                          marginTop: "1rem",
+                          padding: "0.875rem 1rem",
+                          background: "oklch(0.700 0.150 155 / 0.08)",
+                          border: "1px solid oklch(0.700 0.150 155 / 0.25)",
+                          borderRadius: "var(--radius-md)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: "1rem",
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <span style={{ fontSize: "0.8125rem", color: "var(--muted)" }}>
+                          {isDemoMode && (
+                            <span
+                              style={{
+                                fontSize: "0.6875rem",
+                                fontWeight: 600,
+                                color: "var(--faint)",
+                                letterSpacing: "0.04em",
+                                textTransform: "uppercase",
+                                marginRight: "0.5rem",
+                              }}
+                            >
+                              [demo]
+                            </span>
+                          )}
+                          Closed <strong style={{ color: "var(--ink)" }}>{lastClosedCount}</strong>{" "}
+                          account{lastClosedCount !== 1 ? "s" : ""} &mdash; reclaimed{" "}
+                          <strong style={{ color: "oklch(0.700 0.150 155)" }}>
+                            {formatSol(lastReclaimedLamports)} SOL
+                          </strong>
+                        </span>
+                        {isDemoMode ? (
+                          <span
+                            style={{
+                              fontSize: "0.75rem",
+                              color: "var(--faint)",
+                              flexShrink: 0,
+                            }}
+                          >
+                            View on Solana Explorer
+                          </span>
+                        ) : (
+                          <a
+                            href={`https://explorer.solana.com/tx/${lastSignature}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              fontSize: "0.75rem",
+                              color: "var(--muted)",
+                              textDecoration: "underline",
+                              textDecorationStyle: "dotted",
+                              textUnderlineOffset: "3px",
+                              flexShrink: 0,
+                              transition: "color 150ms ease-out",
+                            }}
+                            onMouseEnter={(e) => {
+                              (e.currentTarget as HTMLAnchorElement).style.color = "var(--ink)";
+                            }}
+                            onMouseLeave={(e) => {
+                              (e.currentTarget as HTMLAnchorElement).style.color = "var(--muted)";
+                            }}
+                          >
+                            View on Solana Explorer
+                          </a>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </>

@@ -1,6 +1,7 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { PublicKey, Transaction, SystemProgram } from "@solana/web3.js";
@@ -10,15 +11,15 @@ import { createCloseAccountInstruction, TOKEN_PROGRAM_ID } from "@solana/spl-tok
 const CREATOR_ADDRESS = "81kTLKjRBJBXt4CWz8mv5Fq9mSQVQsU9pDW81rbszxFT";
 
 const WELL_KNOWN_TOKENS: Record<string, string> = {
-  "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v": "USDC",
-  "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB": "USDT",
-  "DezXAZ8z7PnrFcPykJaaExZyF7pCm8yMc14UeLfA6fiZ": "BONK",
-  "EKpQGSJtjMFqKZ9KQGWjhss7WnCXUs55M36xWXjRTVg7": "WIF",
-  "JUPyiwrYdGVGbbJABNWdK7Xy13WCZtaAbWcNUSW5Gde": "JUP",
-  "HZ1J9tN51LLKMdCHoMDI5AbT7hRKX3774a9u23b2c79o": "PYTH",
-  "So11111111111111111111111111111111111111112": "wSOL",
-  "orcaEKTd2g64Q656XXjaDFFuYWCc48iCrrfu4qvHmST": "ORCA",
-  "MangoCzE365vcEx7Xe5JZgWKw1zCQCcRLebMCYAgHnh": "MNGO",
+  EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: "USDC",
+  Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB: "USDT",
+  DezXAZ8z7PnrFcPykJaaExZyF7pCm8yMc14UeLfA6fiZ: "BONK",
+  EKpQGSJtjMFqKZ9KQGWjhss7WnCXUs55M36xWXjRTVg7: "WIF",
+  JUPyiwrYdGVGbbJABNWdK7Xy13WCZtaAbWcNUSW5Gde: "JUP",
+  HZ1J9tN51LLKMdCHoMDI5AbT7hRKX3774a9u23b2c79o: "PYTH",
+  So11111111111111111111111111111111111111112: "wSOL",
+  orcaEKTd2g64Q656XXjaDFFuYWCc48iCrrfu4qvHmST: "ORCA",
+  MangoCzE365vcEx7Xe5JZgWKw1zCQCcRLebMCYAgHnh: "MNGO",
 };
 
 // ---------- types ----------
@@ -43,7 +44,7 @@ function formatSol(lamports: number): string {
 // ---------- component ----------
 export default function Home() {
   const { connection } = useConnection();
-  const { connected, publicKey, disconnect, connecting, sendTransaction } = useWallet();
+  const { connected, publicKey, connecting, sendTransaction } = useWallet();
   const { setVisible } = useWalletModal();
   const [mounted, setMounted] = useState(false);
   const [scanning, setScanning] = useState(false);
@@ -81,10 +82,9 @@ export default function Home() {
     setAccounts([]);
 
     try {
-      const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
-        publicKey,
-        { programId: TOKEN_PROGRAM_ID }
-      );
+      const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
+        programId: TOKEN_PROGRAM_ID,
+      });
 
       const empty: EmptyAccount[] = [];
 
@@ -132,7 +132,7 @@ export default function Home() {
           createCloseAccountInstruction(
             tokenAccountPubkey,
             publicKey, // destination for SOL refund
-            publicKey  // owner authority
+            publicKey // owner authority
           )
         );
       }
@@ -168,7 +168,9 @@ export default function Home() {
       const closedAddresses = new Set(selectedAccounts.map((a) => a.address));
       setAccounts((prev) => prev.filter((a) => !closedAddresses.has(a.address)));
       setSelected(new Set());
-      alert(`Success! Successfully closed ${selectedAccounts.length} account(s) and reclaimed SOL.`);
+      alert(
+        `Success! Successfully closed ${selectedAccounts.length} account(s) and reclaimed SOL.`
+      );
     } catch (error) {
       console.error("Failed to execute transaction:", error);
       alert(error instanceof Error ? error.message : "Failed to execute transaction.");
@@ -204,94 +206,6 @@ export default function Home() {
         flexDirection: "column",
       }}
     >
-      {/* ── Header ── */}
-      <header
-        style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 20,
-          borderBottom: "1px solid var(--border)",
-          background: "oklch(0.100 0.000 0 / 0.85)",
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 720,
-            margin: "0 auto",
-            padding: "0 1.25rem",
-            height: 56,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <span style={{ fontWeight: 700, fontSize: "1rem", letterSpacing: "-0.01em" }}>
-            Dust Cleaner
-          </span>
-          {!connected ? (
-            <button
-              onClick={() => setVisible(true)}
-              style={{
-                background: "transparent",
-                color: "var(--muted)",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius-md)",
-                padding: "0.45rem 0.9rem",
-                fontSize: "0.8125rem",
-                fontWeight: 600,
-                cursor: "pointer",
-                transition: "background 150ms ease-out, border-color 150ms ease-out, color 150ms ease-out",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "var(--surface-hover)";
-                e.currentTarget.style.borderColor = "var(--primary-border)";
-                e.currentTarget.style.color = "var(--ink)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "transparent";
-                e.currentTarget.style.borderColor = "var(--border)";
-                e.currentTarget.style.color = "var(--muted)";
-              }}
-            >
-              {connecting ? "Connecting..." : "Connect"}
-            </button>
-          ) : (
-            <button
-              onClick={() => disconnect()}
-              style={{
-                background: "var(--surface)",
-                color: "var(--ink)",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius-md)",
-                padding: "0.45rem 0.9rem",
-                fontSize: "0.8125rem",
-                fontWeight: 600,
-                cursor: "pointer",
-                transition: "background 150ms ease-out, border-color 150ms ease-out, color 150ms ease-out",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "var(--surface-hover)";
-                e.currentTarget.style.borderColor = "var(--error)";
-                e.currentTarget.style.color = "var(--error)";
-                e.currentTarget.innerText = "Disconnect";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "var(--surface)";
-                e.currentTarget.style.borderColor = "var(--border)";
-                e.currentTarget.style.color = "var(--ink)";
-                e.currentTarget.innerText = publicKey
-                  ? `${publicKey.toBase58().slice(0, 4)}...${publicKey.toBase58().slice(-4)}`
-                  : "";
-              }}
-            >
-              {publicKey ? `${publicKey.toBase58().slice(0, 4)}...${publicKey.toBase58().slice(-4)}` : ""}
-            </button>
-          )}
-        </div>
-      </header>
-
       {/* ── Main ── */}
       <main
         style={{
@@ -328,8 +242,8 @@ export default function Home() {
               margin: "0 auto",
             }}
           >
-            Every Solana token account locks ~0.00203 SOL for rent.
-            Close empty accounts you no longer use and get it back.
+            Every Solana token account locks ~0.00203 SOL for rent. Close empty accounts you no
+            longer use and get it back.
           </p>
         </div>
 
@@ -364,25 +278,19 @@ export default function Home() {
                 fontSize: "0.9375rem",
                 fontWeight: 600,
                 cursor: "pointer",
-                transition: "background 150ms ease-out, border-color 150ms ease-out, color 150ms ease-out, box-shadow 150ms ease-out, transform 150ms ease-out",
+                transition: "background 150ms ease-out, border-color 150ms ease-out",
                 width: "100%",
                 maxWidth: "240px",
                 margin: "0 auto",
                 display: "block",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "var(--primary)";
-                e.currentTarget.style.borderColor = "var(--primary)";
-                e.currentTarget.style.color = "oklch(0.100 0.000 0)";
-                e.currentTarget.style.boxShadow = "0 6px 20px oklch(0.620 0.120 185 / 0.2)";
-                e.currentTarget.style.transform = "translateY(-1px)";
+                e.currentTarget.style.background = "oklch(1.000 0.000 0 / 0.08)";
+                e.currentTarget.style.borderColor = "oklch(1.000 0.000 0 / 0.18)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "oklch(1.000 0.000 0 / 0.04)";
                 e.currentTarget.style.borderColor = "var(--border)";
-                e.currentTarget.style.color = "var(--ink)";
-                e.currentTarget.style.boxShadow = "none";
-                e.currentTarget.style.transform = "translateY(0)";
               }}
             >
               {connecting ? "Connecting..." : "Connect Wallet"}
@@ -487,7 +395,7 @@ export default function Home() {
                   fontSize: "0.9375rem",
                 }}
               >
-                Press "Scan wallet" to find empty token accounts.
+                Press &quot;Scan wallet&quot; to find empty token accounts.
               </div>
             )}
 
@@ -537,7 +445,12 @@ export default function Home() {
                     }}
                   >
                     <label
-                      style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        cursor: "pointer",
+                      }}
                     >
                       <input
                         type="checkbox"
@@ -569,10 +482,13 @@ export default function Home() {
                           transition: "background 150ms ease-out",
                         }}
                         onMouseEnter={(e) => {
-                          if (!isSelected) e.currentTarget.style.background = "var(--surface-hover)";
+                          if (!isSelected)
+                            e.currentTarget.style.background = "var(--surface-hover)";
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.background = isSelected ? "var(--primary-subtle)" : "transparent";
+                          e.currentTarget.style.background = isSelected
+                            ? "var(--primary-subtle)"
+                            : "transparent";
                         }}
                       >
                         <input
@@ -644,13 +560,20 @@ export default function Home() {
                       }}
                     >
                       <span>
-                        {selectedAccounts.length} account{selectedAccounts.length !== 1 ? "s" : ""} selected
+                        {selectedAccounts.length} account{selectedAccounts.length !== 1 ? "s" : ""}{" "}
+                        selected
                       </span>
                       <span>
-                        Gross: <strong style={{ color: "var(--ink)" }}>{formatSol(totalRentLamports)} SOL</strong>
+                        Gross:{" "}
+                        <strong style={{ color: "var(--ink)" }}>
+                          {formatSol(totalRentLamports)} SOL
+                        </strong>
                       </span>
                       <span>
-                        Fee ({(feeRate * 100).toFixed(0)}%): <strong style={{ color: "var(--ink)" }}>{formatSol(feeLamports)} SOL</strong>
+                        Fee ({(feeRate * 100).toFixed(0)}%):{" "}
+                        <strong style={{ color: "var(--ink)" }}>
+                          {formatSol(feeLamports)} SOL
+                        </strong>
                       </span>
                     </div>
 
@@ -668,19 +591,17 @@ export default function Home() {
                         fontWeight: 700,
                         cursor: reclaiming ? "wait" : "pointer",
                         opacity: reclaiming ? 0.6 : 1,
-                        transition: "background 200ms ease-out, box-shadow 200ms ease-out, opacity 200ms ease-out",
+                        transition: "background 200ms ease-out, opacity 200ms ease-out",
                         width: "100%",
                       }}
                       onMouseEnter={(e) => {
                         if (!reclaiming) {
                           e.currentTarget.style.background = "var(--primary-hover)";
-                          e.currentTarget.style.boxShadow = "0 0 0 3px var(--primary-subtle)";
                         }
                       }}
                       onMouseLeave={(e) => {
                         if (!reclaiming) {
                           e.currentTarget.style.background = "var(--primary)";
-                          e.currentTarget.style.boxShadow = "none";
                         }
                       }}
                     >
@@ -696,8 +617,22 @@ export default function Home() {
         )}
 
         {/* ── Collapsible Utility Disclosures ── */}
-        <div style={{ marginTop: "3.5rem", borderTop: "1px solid var(--border)", paddingTop: "1.5rem" }}>
-          <div style={{ display: "flex", justifyContent: "center", gap: "1.5rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
+        <div
+          style={{
+            marginTop: "3.5rem",
+            borderTop: "1px solid var(--border)",
+            paddingTop: "1.5rem",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              gap: "1.5rem",
+              flexWrap: "wrap",
+              marginBottom: "1.25rem",
+            }}
+          >
             <button
               onClick={() => {
                 setIsFeesOpen(!isFeesOpen);
@@ -784,46 +719,83 @@ export default function Home() {
               overflow: "hidden",
             }}
           >
-            <div style={{ minHeight: 0, textAlign: "center" }}>
-              <p style={{ lineHeight: 1.7, maxWidth: "55ch", marginBottom: "1rem", fontSize: "0.8125rem", color: "var(--muted)", margin: "0 auto 1rem" }}>
-                A small fee is deducted from the reclaimed rent directly inside the transaction.
-                The rate depends on the total amount recovered:
-              </p>
-              <table
+            <div style={{ minHeight: 0 }}>
+              <div
                 style={{
-                  width: "100%",
-                  maxWidth: 400,
-                  borderCollapse: "collapse",
-                  fontSize: "0.8125rem",
-                  color: "var(--muted)",
+                  background: "oklch(1.000 0.000 0 / 0.02)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--radius-md)",
+                  padding: "1.25rem",
+                  maxWidth: "480px",
                   margin: "0 auto 1.25rem",
+                  textAlign: "left",
                 }}
               >
-                <thead>
-                  <tr style={{ borderBottom: "1px solid var(--border)" }}>
-                    <th style={{ textAlign: "left", padding: "0.5rem 0.75rem 0.5rem 0", fontWeight: 600, color: "var(--ink)" }}>
-                      Reclaimed SOL
-                    </th>
-                    <th style={{ textAlign: "right", padding: "0.5rem 0 0.5rem 0.75rem", fontWeight: 600, color: "var(--ink)" }}>
-                      Fee
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    ["Below 0.05 SOL", "5%"],
-                    ["0.05 to 0.20 SOL", "2%"],
-                    ["Above 0.20 SOL", "1%"],
-                  ].map(([range, rate]) => (
-                    <tr key={range} style={{ borderBottom: "1px solid var(--border)" }}>
-                      <td style={{ padding: "0.5rem 0.75rem 0.5rem 0" }}>{range}</td>
-                      <td style={{ textAlign: "right", padding: "0.5rem 0 0.5rem 0.75rem", fontWeight: 600 }}>
-                        {rate}
-                      </td>
+                <p
+                  style={{
+                    lineHeight: 1.6,
+                    marginBottom: "1rem",
+                    fontSize: "0.8125rem",
+                    color: "var(--muted)",
+                  }}
+                >
+                  A small fee is deducted from the reclaimed rent directly inside the transaction.
+                  The rate depends on the total amount recovered:
+                </p>
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    fontSize: "0.8125rem",
+                    color: "var(--muted)",
+                  }}
+                >
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                      <th
+                        style={{
+                          textAlign: "left",
+                          padding: "0.5rem 0.75rem 0.5rem 0",
+                          fontWeight: 600,
+                          color: "var(--ink)",
+                        }}
+                      >
+                        Reclaimed SOL
+                      </th>
+                      <th
+                        style={{
+                          textAlign: "right",
+                          padding: "0.5rem 0 0.5rem 0.75rem",
+                          fontWeight: 600,
+                          color: "var(--ink)",
+                        }}
+                      >
+                        Fee
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {[
+                      ["Below 0.05 SOL", "5%"],
+                      ["0.05 to 0.20 SOL", "2%"],
+                      ["Above 0.20 SOL", "1%"],
+                    ].map(([range, rate]) => (
+                      <tr key={range} style={{ borderBottom: "1px solid var(--border)" }}>
+                        <td style={{ padding: "0.5rem 0.75rem 0.5rem 0" }}>{range}</td>
+                        <td
+                          style={{
+                            textAlign: "right",
+                            padding: "0.5rem 0 0.5rem 0.75rem",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {rate}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 
@@ -839,36 +811,47 @@ export default function Home() {
             <div style={{ minHeight: 0 }}>
               <div
                 style={{
+                  background: "oklch(1.000 0.000 0 / 0.02)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--radius-md)",
+                  padding: "1.25rem",
+                  maxWidth: "480px",
+                  margin: "0 auto 1.25rem",
+                  textAlign: "left",
                   display: "flex",
                   flexDirection: "column",
-                  alignItems: "center",
-                  textAlign: "center",
                   gap: "1.25rem",
                   fontSize: "0.8125rem",
                   lineHeight: 1.6,
                   color: "var(--muted)",
-                  maxWidth: "60ch",
-                  margin: "0 auto",
-                  paddingBottom: "1.25rem",
                 }}
               >
                 <div>
-                  <strong style={{ color: "var(--ink)", display: "block", marginBottom: "0.25rem" }}>
+                  <strong
+                    style={{ color: "var(--ink)", display: "block", marginBottom: "0.25rem" }}
+                  >
                     No custom smart contracts
                   </strong>
-                  All transactions are constructed client-side using audited, official Solana programs. The code is entirely open-source and auditable.
+                  All transactions are constructed client-side using audited, official Solana
+                  programs. The code is entirely open-source and auditable.
                 </div>
                 <div>
-                  <strong style={{ color: "var(--ink)", display: "block", marginBottom: "0.25rem" }}>
+                  <strong
+                    style={{ color: "var(--ink)", display: "block", marginBottom: "0.25rem" }}
+                  >
                     Mathematical balance checks
                   </strong>
-                  Under Solana network rules, a token account cannot be closed if it holds any balance. Your active tokens cannot be lost or spent by this tool.
+                  Under Solana network rules, a token account cannot be closed if it holds any
+                  balance. Your active tokens cannot be lost or spent by this tool.
                 </div>
                 <div>
-                  <strong style={{ color: "var(--ink)", display: "block", marginBottom: "0.25rem" }}>
+                  <strong
+                    style={{ color: "var(--ink)", display: "block", marginBottom: "0.25rem" }}
+                  >
                     Full wallet validation
                   </strong>
-                  Every action is visible on your wallet's approval screen. You can inspect the exact close instructions and fee transfers before signing.
+                  Every action is visible on your wallet&apos;s approval screen. You can inspect the
+                  exact close instructions and fee transfers before signing.
                 </div>
               </div>
             </div>

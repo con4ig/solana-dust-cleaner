@@ -1,0 +1,41 @@
+Business Source License 1.1
+
+Parameters:
+- Licensor: Solana Dust Cleaner Community
+- Change Date: July 18, 2028
+- Change License: MIT
+- Additional Use Grant: You are permitted to use the Licensed Work for personal, non-commercial purposes, including running the application locally to close your own token accounts. Production deployment or commercial hosting of the application by any party other than the Licensor is strictly prohibited.
+
+---
+
+License Text:
+
+1. Definitions
+
+"Licensed Work" means the software and any associated documentation files to which this License is applied by the Licensor.
+
+"Licensor" means the individual or entity specified in the Parameters above.
+
+"Change Date" means the date specified in the Parameters above.
+
+"Change License" means the license specified in the Parameters above.
+
+"Additional Use Grant" means the additional permissions granted by the Licensor as specified in the Parameters above.
+
+2. License Grants
+
+2.1 Commercial Use and Production Hosting. Subject to the terms and conditions of this License, the Licensor hereby grants you a non-exclusive, non-transferable, royalty-free license to copy, modify, and distribute the Licensed Work, and to run it for development and auditing purposes only. Production deployment or commercial hosting of the application to serve users is strictly prohibited unless explicitly authorized by the Licensor.
+
+2.2 Additional Use Grant. In addition to the license granted in Section 2.1, the Licensor grants you the permissions specified in the Additional Use Grant.
+
+3. Change to Change License
+
+On the Change Date, this License shall automatically convert to the Change License (MIT). From the Change Date onwards, your use of the Licensed Work shall be governed solely by the terms of the Change License.
+
+4. Intellectual Property Rights
+
+The Licensor retains all ownership and intellectual property rights in the Licensed Work.
+
+5. Disclaimer of Warranties and Limitation of Liability
+
+THE LICENSED WORK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE LICENSED WORK OR THE USE OR OTHER DEALINGS IN THE LICENSED WORK.

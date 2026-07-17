@@ -158,7 +158,13 @@ solana-dust-cleaner/
 
 ## License
 
-MIT - free to use, audit, fork, and contribute.
+This project is licensed under the **Business Source License 1.1 (BSL-1.1)**.
+
+- You may read, audit, fork, and run the code locally for personal use.
+- Commercial hosting or production deployment by any party other than the author is not permitted.
+- On **July 18, 2028**, the license automatically converts to **MIT** - free for everyone.
+
+See the [LICENSE](LICENSE) file for full terms.
 
 ---
 

@@ -15,6 +15,7 @@ import { motion, AnimatePresence } from "framer-motion";
 // ---------- config ----------
 const CREATOR_ADDRESS =
   process.env.NEXT_PUBLIC_CREATOR_ADDRESS || "81kTLKjRBJBXt4CWz8mv5Fq9mSQVQsU9pDW81rbszxFT";
+const REFERRER_FEE_SHARE = 0.4; // 40% of fees go to referrer
 
 const METADATA_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
 
@@ -126,6 +127,12 @@ export default function Home() {
   const [lastReclaimedLamports, setLastReclaimedLamports] = useState(0);
   const [closingAccounts, setClosingAccounts] = useState<Set<string>>(new Set());
 
+  // Referral system state
+  const [referrerAddress, setReferrerAddress] = useState<string | null>(null);
+  const [partnerWalletInput, setPartnerWalletInput] = useState("");
+  const [generatedRefLink, setGeneratedRefLink] = useState<string | null>(null);
+  const [refLinkCopied, setRefLinkCopied] = useState(false);
+
   const feesRef = useRef<HTMLDivElement>(null);
   const securityRef = useRef<HTMLDivElement>(null);
 
@@ -147,6 +154,30 @@ export default function Home() {
 
   useEffect(() => {
     setMounted(true);
+
+    // Read referral param from URL or localStorage
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const refParam = params.get("ref");
+      if (refParam) {
+        // Validate that it's a real Solana address
+        const refPubkey = new PublicKey(refParam);
+        if (PublicKey.isOnCurve(refPubkey.toBytes())) {
+          setReferrerAddress(refParam);
+          localStorage.setItem("referrer", refParam);
+        }
+      } else {
+        const stored = localStorage.getItem("referrer");
+        if (stored) {
+          const storedPubkey = new PublicKey(stored);
+          if (PublicKey.isOnCurve(storedPubkey.toBytes())) {
+            setReferrerAddress(stored);
+          }
+        }
+      }
+    } catch {
+      // Invalid address, ignore
+    }
   }, []);
 
   // Close wallet menu on outside click
@@ -320,15 +351,43 @@ export default function Home() {
         }
       }
 
-      // Add transfer instruction for commission fee
+      // Add transfer instruction for commission fee (with referral split)
       if (feeLamports > 0) {
-        transaction.add(
-          SystemProgram.transfer({
-            fromPubkey: publicKey,
-            toPubkey: creatorPubkey,
-            lamports: feeLamports,
-          })
-        );
+        if (referrerAddress) {
+          const referrerPubkey = new PublicKey(referrerAddress);
+          const referrerLamports = Math.floor(feeLamports * REFERRER_FEE_SHARE);
+          const creatorLamports = feeLamports - referrerLamports;
+
+          // Creator's share (60%)
+          if (creatorLamports > 0) {
+            transaction.add(
+              SystemProgram.transfer({
+                fromPubkey: publicKey,
+                toPubkey: creatorPubkey,
+                lamports: creatorLamports,
+              })
+            );
+          }
+          // Referrer's share (40%)
+          if (referrerLamports > 0) {
+            transaction.add(
+              SystemProgram.transfer({
+                fromPubkey: publicKey,
+                toPubkey: referrerPubkey,
+                lamports: referrerLamports,
+              })
+            );
+          }
+        } else {
+          // No referrer – 100% to creator
+          transaction.add(
+            SystemProgram.transfer({
+              fromPubkey: publicKey,
+              toPubkey: creatorPubkey,
+              lamports: feeLamports,
+            })
+          );
+        }
       }
 
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
@@ -699,6 +758,79 @@ export default function Home() {
           </button>
         )}
       </header>
+
+      {/* ── Referral Banner ── */}
+      <AnimatePresence>
+        {referrerAddress && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            style={{ overflow: "hidden" }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "0.5rem",
+                padding: "0.5rem 1.5rem",
+                background: "oklch(0.55 0.15 145 / 0.1)",
+                borderBottom: "1px solid oklch(0.55 0.15 145 / 0.2)",
+                fontSize: "0.75rem",
+                color: "oklch(0.75 0.12 145)",
+              }}
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+              <span>
+                Referred by{" "}
+                <span style={{ fontFamily: "var(--font-mono)", fontWeight: 600 }}>
+                  {referrerAddress.slice(0, 4)}...{referrerAddress.slice(-4)}
+                </span>
+                {" · "}
+                Partner earns {Math.round(REFERRER_FEE_SHARE * 100)}% of fees
+              </span>
+              <button
+                onClick={() => {
+                  setReferrerAddress(null);
+                  localStorage.removeItem("referrer");
+                }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "oklch(0.75 0.12 145)",
+                  cursor: "pointer",
+                  padding: "0 0.25rem",
+                  fontSize: "0.875rem",
+                  lineHeight: 1,
+                  opacity: 0.6,
+                  transition: "opacity 150ms ease",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.6")}
+                title="Remove referral"
+              >
+                ×
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Main ── */}
       <main
@@ -1665,6 +1797,253 @@ export default function Home() {
               </motion.div>
             )}
           </AnimatePresence>
+        </div>
+
+        {/* ── Partner Program Section ── */}
+        <div
+          style={{
+            marginTop: "2rem",
+            borderTop: "1px solid var(--border)",
+            paddingTop: "2.5rem",
+          }}
+        >
+          <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
+            <h2
+              style={{
+                fontSize: "1.25rem",
+                fontWeight: 700,
+                letterSpacing: "-0.01em",
+                marginBottom: "0.5rem",
+              }}
+            >
+              Earn SOL — Partner Program
+            </h2>
+            <p
+              style={{
+                fontSize: "0.875rem",
+                color: "var(--muted)",
+                lineHeight: 1.6,
+                maxWidth: "45ch",
+                margin: "0 auto",
+              }}
+            >
+              Share your referral link and earn{" "}
+              <strong style={{ color: "var(--ink)" }}>
+                {Math.round(REFERRER_FEE_SHARE * 100)}%
+              </strong>{" "}
+              of all transaction fees generated by your users. Paid automatically on-chain.
+            </p>
+          </div>
+
+          <div
+            style={{
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--radius-lg)",
+              padding: "1.5rem",
+              maxWidth: "480px",
+              margin: "0 auto",
+            }}
+          >
+            {/* How it works mini-steps */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginBottom: "1.25rem",
+                gap: "0.5rem",
+              }}
+            >
+              {[
+                { step: "1", label: "Paste your wallet" },
+                { step: "2", label: "Share the link" },
+                { step: "3", label: "Earn SOL" },
+              ].map((item) => (
+                <div
+                  key={item.step}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.375rem",
+                    fontSize: "0.75rem",
+                    color: "var(--muted)",
+                  }}
+                >
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 20,
+                      height: 20,
+                      borderRadius: "50%",
+                      background: "oklch(1 0 0 / 0.06)",
+                      border: "1px solid var(--border)",
+                      fontSize: "0.6875rem",
+                      fontWeight: 700,
+                      color: "var(--ink)",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {item.step}
+                  </span>
+                  {item.label}
+                </div>
+              ))}
+            </div>
+
+            {/* Input + Generate */}
+            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
+              <input
+                type="text"
+                placeholder="Your Solana wallet address"
+                value={partnerWalletInput}
+                onChange={(e) => {
+                  setPartnerWalletInput(e.target.value);
+                  setGeneratedRefLink(null);
+                  setRefLinkCopied(false);
+                }}
+                style={{
+                  flex: 1,
+                  background: "oklch(1 0 0 / 0.03)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--radius-sm)",
+                  padding: "0.5rem 0.75rem",
+                  fontSize: "0.8125rem",
+                  color: "var(--ink)",
+                  fontFamily: "var(--font-mono)",
+                  outline: "none",
+                  transition: "border-color 150ms ease",
+                }}
+                onFocus={(e) => (e.currentTarget.style.borderColor = "oklch(1 0 0 / 0.2)")}
+                onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
+              />
+              <button
+                onClick={() => {
+                  try {
+                    const pubkey = new PublicKey(partnerWalletInput.trim());
+                    if (!PublicKey.isOnCurve(pubkey.toBytes())) {
+                      alert("Invalid Solana wallet address.");
+                      return;
+                    }
+                    const baseUrl = window.location.origin + window.location.pathname;
+                    const link = `${baseUrl}?ref=${pubkey.toBase58()}`;
+                    setGeneratedRefLink(link);
+                    navigator.clipboard.writeText(link);
+                    setRefLinkCopied(true);
+                    setTimeout(() => setRefLinkCopied(false), 2500);
+                  } catch {
+                    alert("Invalid Solana wallet address. Please paste a valid public key.");
+                  }
+                }}
+                style={{
+                  background: "oklch(1 0 0 / 0.06)",
+                  color: "var(--ink)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--radius-sm)",
+                  padding: "0.5rem 1rem",
+                  fontSize: "0.8125rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  transition: "background 150ms ease, border-color 150ms ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "oklch(1 0 0 / 0.1)";
+                  e.currentTarget.style.borderColor = "oklch(1 0 0 / 0.2)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "oklch(1 0 0 / 0.06)";
+                  e.currentTarget.style.borderColor = "var(--border)";
+                }}
+              >
+                {refLinkCopied ? "Copied!" : "Generate Link"}
+              </button>
+            </div>
+
+            {/* Generated link display */}
+            <AnimatePresence>
+              {generatedRefLink && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                  style={{ overflow: "hidden" }}
+                >
+                  <div
+                    style={{
+                      background: "oklch(0.55 0.15 145 / 0.08)",
+                      border: "1px solid oklch(0.55 0.15 145 / 0.2)",
+                      borderRadius: "var(--radius-sm)",
+                      padding: "0.625rem 0.75rem",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "0.5rem",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: "0.75rem",
+                        fontFamily: "var(--font-mono)",
+                        color: "oklch(0.75 0.12 145)",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {generatedRefLink}
+                    </span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(generatedRefLink);
+                        setRefLinkCopied(true);
+                        setTimeout(() => setRefLinkCopied(false), 2500);
+                      }}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "oklch(0.75 0.12 145)",
+                        cursor: "pointer",
+                        padding: "0.125rem",
+                        flexShrink: 0,
+                      }}
+                      title="Copy to clipboard"
+                    >
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                      </svg>
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Fee split info */}
+            <p
+              style={{
+                fontSize: "0.6875rem",
+                color: "var(--faint)",
+                marginTop: "0.75rem",
+                textAlign: "center",
+                lineHeight: 1.5,
+              }}
+            >
+              Fees are split on-chain in the same transaction. Your users pay the same rate — your
+              share comes from our cut.
+            </p>
+          </div>
         </div>
       </main>
 

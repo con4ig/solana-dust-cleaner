@@ -3,7 +3,9 @@ import { SolanaProvider } from "@/providers/SolanaProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://solanadustcleaner.com"),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "https://solana-dust-cleaner.vercel.app"
+  ),
   title: "Solana Dust Cleaner & Spam NFT Burner - Reclaim Locked SOL Rent",
   description:
     "Close empty SPL token accounts and burn spam NFTs to reclaim your locked SOL rent deposits. Free, transparent, open-source utility for the Solana community.",
@@ -26,7 +28,7 @@ export const metadata: Metadata = {
     title: "Solana Dust Cleaner & Spam NFT Burner - Reclaim Locked SOL Rent",
     description:
       "Close empty SPL token accounts and burn spam NFTs to reclaim your locked SOL rent deposits. Free, transparent, open-source utility for the Solana community.",
-    url: "https://solanadustcleaner.com",
+    url: "/",
     siteName: "Solana Dust Cleaner & NFT Burner",
     images: [
       {
@@ -58,7 +60,7 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://solanadustcleaner.com",
+    canonical: "/",
   },
 };
 

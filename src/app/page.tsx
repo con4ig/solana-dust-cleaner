@@ -424,9 +424,43 @@ export default function Home() {
           padding: "0.75rem 1.5rem",
           display: "flex",
           alignItems: "center",
-          justifyContent: "flex-end",
+          justifyContent: "space-between",
         }}
       >
+        <div style={{ display: "flex", alignItems: "center", gap: "0.65rem" }}>
+          {/* Logo */}
+          <div
+            style={{
+              position: "relative",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 44,
+              height: 44,
+            }}
+          >
+            <img
+              src="/icon.png?v=2"
+              alt="Solana Dust Cleaner Logo"
+              style={{
+                width: "70%",
+                height: "70%",
+                objectFit: "contain",
+              }}
+            />
+          </div>
+          <span
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontWeight: 600,
+              fontSize: "0.875rem",
+              letterSpacing: "0.05em",
+              color: "var(--ink)",
+            }}
+          >
+            Solana Dust Cleaner
+          </span>
+        </div>
         {connected && publicKey ? (
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
             <button

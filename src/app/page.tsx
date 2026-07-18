@@ -359,8 +359,8 @@ export default function Home() {
           const referrerLamports = Math.floor(feeLamports * REFERRER_FEE_SHARE);
           const creatorLamports = feeLamports - referrerLamports;
 
-          // Creator's share (60%)
-          if (creatorLamports > 0) {
+          // Creator's share (60%) - skip if self-transfer
+          if (creatorLamports > 0 && !publicKey.equals(creatorPubkey)) {
             transaction.add(
               SystemProgram.transfer({
                 fromPubkey: publicKey,
@@ -369,8 +369,8 @@ export default function Home() {
               })
             );
           }
-          // Referrer's share (40%)
-          if (referrerLamports > 0) {
+          // Referrer's share (40%) - skip if self-transfer
+          if (referrerLamports > 0 && !publicKey.equals(referrerPubkey)) {
             transaction.add(
               SystemProgram.transfer({
                 fromPubkey: publicKey,
@@ -380,14 +380,16 @@ export default function Home() {
             );
           }
         } else {
-          // No referrer – 100% to creator
-          transaction.add(
-            SystemProgram.transfer({
-              fromPubkey: publicKey,
-              toPubkey: creatorPubkey,
-              lamports: feeLamports,
-            })
-          );
+          // No referrer – 100% to creator - skip if self-transfer
+          if (!publicKey.equals(creatorPubkey)) {
+            transaction.add(
+              SystemProgram.transfer({
+                fromPubkey: publicKey,
+                toPubkey: creatorPubkey,
+                lamports: feeLamports,
+              })
+            );
+          }
         }
       }
 

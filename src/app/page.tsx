@@ -4,7 +4,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
-import { PublicKey, Transaction, SystemProgram } from "@solana/web3.js";
+import { PublicKey, Transaction, SystemProgram, ComputeBudgetProgram } from "@solana/web3.js";
 import {
   createCloseAccountInstruction,
   createBurnInstruction,
@@ -61,36 +61,53 @@ function formatSol(lamports: number): string {
   return (lamports / 1e9).toFixed(5);
 }
 
+/** Read a u32 little-endian directly from Uint8Array indices – no DataView needed. */
+function readU32LE(arr: Uint8Array, off: number): number {
+  return (arr[off] | (arr[off + 1] << 8) | (arr[off + 2] << 16) | (arr[off + 3] << 24)) >>> 0;
+}
+
 function parseMetaplexMetadata(
   buffer: Uint8Array
 ): { name: string; symbol: string; uri: string } | null {
   try {
+    // Metaplex Metadata V1 layout: key(1) + updateAuthority(32) + mint(32) = 65 byte header
     let offset = 65;
-    if (buffer.length < offset + 4) return null;
-    const nameLen = new DataView(buffer.buffer, buffer.byteOffset + offset, 4).getUint32(0, true);
+
+    // --- Name ---
+    if (offset + 4 > buffer.length) return null;
+    const nameLen = readU32LE(buffer, offset);
     offset += 4;
-    if (buffer.length < offset + nameLen) return null;
-    const nameBytes = buffer.slice(offset, offset + nameLen);
-    const name = new TextDecoder().decode(nameBytes).replace(/\0/g, "").trim();
+    if (nameLen < 0 || nameLen > 256 || offset + nameLen > buffer.length) return null;
+    const name = new TextDecoder("utf-8")
+      .decode(buffer.subarray(offset, offset + nameLen))
+      .replace(/\0/g, "")
+      .trim();
     offset += nameLen;
 
-    if (buffer.length < offset + 4) return null;
-    const symbolLen = new DataView(buffer.buffer, buffer.byteOffset + offset, 4).getUint32(0, true);
+    // --- Symbol ---
+    if (offset + 4 > buffer.length) return null;
+    const symbolLen = readU32LE(buffer, offset);
     offset += 4;
-    if (buffer.length < offset + symbolLen) return null;
-    const symbolBytes = buffer.slice(offset, offset + symbolLen);
-    const symbol = new TextDecoder().decode(symbolBytes).replace(/\0/g, "").trim();
+    if (symbolLen < 0 || symbolLen > 64 || offset + symbolLen > buffer.length) return null;
+    const symbol = new TextDecoder("utf-8")
+      .decode(buffer.subarray(offset, offset + symbolLen))
+      .replace(/\0/g, "")
+      .trim();
     offset += symbolLen;
 
-    if (buffer.length < offset + 4) return null;
-    const uriLen = new DataView(buffer.buffer, buffer.byteOffset + offset, 4).getUint32(0, true);
+    // --- URI ---
+    if (offset + 4 > buffer.length) return null;
+    const uriLen = readU32LE(buffer, offset);
     offset += 4;
-    if (buffer.length < offset + uriLen) return null;
-    const uriBytes = buffer.slice(offset, offset + uriLen);
-    const uri = new TextDecoder().decode(uriBytes).replace(/\0/g, "").trim();
+    if (uriLen < 0 || uriLen > 512 || offset + uriLen > buffer.length) return null;
+    const uri = new TextDecoder("utf-8")
+      .decode(buffer.subarray(offset, offset + uriLen))
+      .replace(/\0/g, "")
+      .trim();
 
     return { name, symbol, uri };
-  } catch (e) {
+  } catch {
+    // Malformed on-chain data for this account – skip it, don't crash the scan
     return null;
   }
 }
@@ -126,6 +143,11 @@ export default function Home() {
   const [lastClosedCount, setLastClosedCount] = useState(0);
   const [lastReclaimedLamports, setLastReclaimedLamports] = useState(0);
   const [closingAccounts, setClosingAccounts] = useState<Set<string>>(new Set());
+  const [batchProgress, setBatchProgress] = useState<string | null>(null);
+
+  // Refs for stale-wallet / abort guard (Fix 3)
+  const walletKeyRef = useRef<string | null>(null);
+  const scanAbortRef = useRef<AbortController | null>(null);
 
   // Referral system state
   const [referrerAddress, setReferrerAddress] = useState<string | null>(null);
@@ -181,6 +203,14 @@ export default function Home() {
     }
   }, []);
 
+  // Abort scan on wallet disconnect
+  useEffect(() => {
+    if (!connected) {
+      scanAbortRef.current?.abort();
+      walletKeyRef.current = null;
+    }
+  }, [connected]);
+
   // Close wallet menu on outside click
   useEffect(() => {
     if (!walletMenuOpen) return;
@@ -210,6 +240,20 @@ export default function Home() {
 
   async function handleScan() {
     if (!publicKey || !connection || scanning || reclaiming) return;
+
+    // Abort any previously running scan
+    scanAbortRef.current?.abort();
+    const abortController = new AbortController();
+    scanAbortRef.current = abortController;
+    const signal = abortController.signal;
+
+    // Snapshot the wallet that initiated this scan
+    const scanWalletKey = publicKey.toBase58();
+    walletKeyRef.current = scanWalletKey;
+
+    /** Returns true if the wallet has changed or the scan was aborted. */
+    const isStale = () => signal.aborted || walletKeyRef.current !== scanWalletKey;
+
     setScanning(true);
     setScanned(false);
     setSelectedDust(new Set());
@@ -223,6 +267,7 @@ export default function Home() {
       const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
         programId: TOKEN_PROGRAM_ID,
       });
+      if (isStale()) return;
 
       const empty: EmptyAccount[] = [];
       const nftCandidates: {
@@ -257,6 +302,8 @@ export default function Home() {
         }
       }
 
+      if (isStale()) return;
+
       // Process dust
       setDustAccounts(empty);
       setSelectedDust(new Set(empty.map((a) => a.address)));
@@ -269,9 +316,13 @@ export default function Home() {
         const nfts: NftAccount[] = [];
         const chunkSize = 100;
         for (let i = 0; i < nftCandidates.length; i += chunkSize) {
+          if (isStale()) return;
+
           const chunk = nftCandidates.slice(i, i + chunkSize);
           const pdas = chunk.map((c) => c.pda);
           const accountInfos = await connection.getMultipleAccountsInfo(pdas);
+
+          if (isStale()) return;
 
           for (let j = 0; j < chunk.length; j++) {
             const info = accountInfos[j];
@@ -291,11 +342,15 @@ export default function Home() {
             let image: string | undefined;
             if (uri.startsWith("http")) {
               try {
-                const res = await fetch(`/api/proxy?url=${encodeURIComponent(uri)}`);
+                const res = await fetch(`/api/proxy?url=${encodeURIComponent(uri)}`, { signal });
                 const json = await res.json();
                 if (json.image) image = json.image;
-              } catch (e) {}
+              } catch {
+                // Aborted or network error – skip image
+              }
             }
+
+            if (isStale()) return;
 
             nfts.push({
               address: chunk[j].address,
@@ -307,127 +362,224 @@ export default function Home() {
             });
           }
         }
+
+        if (isStale()) return;
         setNftAccounts(nfts);
         setSelectedNft(new Set(nfts.map((a) => a.address)));
       }
 
+      if (isStale()) return;
       setScanned(true);
     } catch (error) {
+      if (signal.aborted) return; // intentional abort, not an error
       console.error("Failed to scan token accounts:", error);
       alert("Error scanning wallet. Make sure your connection is stable.");
     } finally {
-      const elapsed = Date.now() - startTime;
-      const minDelay = 1500;
-      if (elapsed < minDelay) await new Promise((r) => setTimeout(r, minDelay - elapsed));
-      setScanning(false);
+      // Only clear scanning state if this is still the active scan
+      if (!isStale()) {
+        const elapsed = Date.now() - startTime;
+        const minDelay = 1500;
+        if (elapsed < minDelay) await new Promise((r) => setTimeout(r, minDelay - elapsed));
+        setScanning(false);
+      }
     }
   }
+
+  // --- Batch size limits (accounts per transaction) ---
+  // CloseAccount = ~1 instruction = ~40 bytes overhead per account
+  // Burn+Close   = ~2 instructions = ~80 bytes overhead per account
+  // Leaving room for ComputeBudget (2 ixs), fee transfer (1-2 ixs), blockhash, sigs (~200 bytes)
+  // Max serialized tx = 1232 bytes → safe limits:
+  const DUST_BATCH_SIZE = 10;
+  const NFT_BATCH_SIZE = 4;
 
   async function handleReclaim() {
     if (!publicKey || !connection || selectedCount === 0 || reclaiming) return;
 
     setReclaiming(true);
+    setBatchProgress(null);
+
+    const creatorPubkey = new PublicKey(CREATOR_ADDRESS);
+
+    // Gather accounts to process
+    type AccountItem = { address: string; mint: string; rentLamports: number };
+    const accountsToProcess: AccountItem[] = isDustTab
+      ? dustAccounts.filter((a) => selectedDust.has(a.address))
+      : nftAccounts.filter((a) => selectedNft.has(a.address));
+
+    const batchSize = isDustTab ? DUST_BATCH_SIZE : NFT_BATCH_SIZE;
+
+    // Split into batches
+    const batches: AccountItem[][] = [];
+    for (let i = 0; i < accountsToProcess.length; i += batchSize) {
+      batches.push(accountsToProcess.slice(i, i + batchSize));
+    }
+
+    // Recalculate total rent for ALL selected accounts to determine the overall fee rate
+    const totalSelectedRent = accountsToProcess.reduce((s, a) => s + a.rentLamports, 0);
+    const totalSol = totalSelectedRent / 1e9;
+    const feeRateLocal = getFeeRate(totalSol);
+
+    const allClosedAddresses = new Set<string>();
+    const failedAddresses = new Set<string>();
+    let lastSig: string | null = null;
+    let totalFeePaid = 0;
 
     try {
-      const creatorPubkey = new PublicKey(CREATOR_ADDRESS);
-      const transaction = new Transaction();
+      for (let batchIdx = 0; batchIdx < batches.length; batchIdx++) {
+        const batch = batches[batchIdx];
+        setBatchProgress(`Processing batch ${batchIdx + 1} of ${batches.length}...`);
 
-      const addressesToClose = new Set<string>();
+        try {
+          const transaction = new Transaction();
 
-      if (isDustTab) {
-        const accountsToProcess = dustAccounts.filter((a) => selectedDust.has(a.address));
-        for (const account of accountsToProcess) {
-          addressesToClose.add(account.address);
-          const tokenAccountPubkey = new PublicKey(account.address);
-          transaction.add(createCloseAccountInstruction(tokenAccountPubkey, publicKey, publicKey));
-        }
-      } else {
-        const accountsToProcess = nftAccounts.filter((a) => selectedNft.has(a.address));
-        for (const account of accountsToProcess) {
-          addressesToClose.add(account.address);
-          const tokenAccountPubkey = new PublicKey(account.address);
-          const mintPubkey = new PublicKey(account.mint);
-          transaction.add(createBurnInstruction(tokenAccountPubkey, mintPubkey, publicKey, 1));
-          transaction.add(createCloseAccountInstruction(tokenAccountPubkey, publicKey, publicKey));
+          // Priority fee + compute budget
+          transaction.add(
+            ComputeBudgetProgram.setComputeUnitLimit({ units: 200_000 }),
+            ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 1_000 })
+          );
+
+          const batchAddresses = new Set<string>();
+
+          if (isDustTab) {
+            for (const account of batch) {
+              batchAddresses.add(account.address);
+              const tokenAccountPubkey = new PublicKey(account.address);
+              transaction.add(
+                createCloseAccountInstruction(tokenAccountPubkey, publicKey, publicKey)
+              );
+            }
+          } else {
+            for (const account of batch) {
+              batchAddresses.add(account.address);
+              const tokenAccountPubkey = new PublicKey(account.address);
+              const mintPubkey = new PublicKey(account.mint);
+              transaction.add(createBurnInstruction(tokenAccountPubkey, mintPubkey, publicKey, 1));
+              transaction.add(
+                createCloseAccountInstruction(tokenAccountPubkey, publicKey, publicKey)
+              );
+            }
+          }
+
+          // Calculate fee for this specific batch
+          const batchRent = batch.reduce((s, a) => s + a.rentLamports, 0);
+          const batchFeeLamports = Math.floor(batchRent * feeRateLocal);
+
+          // Add fee transfer for this batch
+          if (batchFeeLamports > 0) {
+            if (referrerAddress) {
+              const referrerPubkey = new PublicKey(referrerAddress);
+              const referrerLamports = Math.floor(batchFeeLamports * REFERRER_FEE_SHARE);
+              const creatorLamports = batchFeeLamports - referrerLamports;
+
+              if (creatorLamports > 0 && !publicKey.equals(creatorPubkey)) {
+                transaction.add(
+                  SystemProgram.transfer({
+                    fromPubkey: publicKey,
+                    toPubkey: creatorPubkey,
+                    lamports: creatorLamports,
+                  })
+                );
+              }
+              if (referrerLamports > 0 && !publicKey.equals(referrerPubkey)) {
+                transaction.add(
+                  SystemProgram.transfer({
+                    fromPubkey: publicKey,
+                    toPubkey: referrerPubkey,
+                    lamports: referrerLamports,
+                  })
+                );
+              }
+            } else {
+              if (!publicKey.equals(creatorPubkey)) {
+                transaction.add(
+                  SystemProgram.transfer({
+                    fromPubkey: publicKey,
+                    toPubkey: creatorPubkey,
+                    lamports: batchFeeLamports,
+                  })
+                );
+              }
+            }
+          }
+
+          const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+          transaction.recentBlockhash = blockhash;
+          transaction.feePayer = publicKey;
+
+          const signature = await sendTransaction(transaction, connection);
+
+          const confirmation = await connection.confirmTransaction({
+            signature,
+            blockhash,
+            lastValidBlockHeight,
+          });
+
+          if (confirmation.value.err) {
+            throw new Error(`Batch ${batchIdx + 1} failed on-chain.`);
+          }
+
+          // Batch succeeded
+          lastSig = signature;
+          totalFeePaid += batchFeeLamports;
+          batchAddresses.forEach((addr) => allClosedAddresses.add(addr));
+
+          // Progressively remove closed accounts from the UI
+          setClosingAccounts((prev) => {
+            const next = new Set(prev);
+            batchAddresses.forEach((addr) => next.add(addr));
+            return next;
+          });
+
+          // Remove closed accounts from data after a brief animation delay
+          await new Promise((r) => setTimeout(r, 400));
+          if (isDustTab) {
+            setDustAccounts((prev) => prev.filter((a) => !batchAddresses.has(a.address)));
+            setSelectedDust((prev) => {
+              const next = new Set(prev);
+              batchAddresses.forEach((addr) => next.delete(addr));
+              return next;
+            });
+          } else {
+            setNftAccounts((prev) => prev.filter((a) => !batchAddresses.has(a.address)));
+            setSelectedNft((prev) => {
+              const next = new Set(prev);
+              batchAddresses.forEach((addr) => next.delete(addr));
+              return next;
+            });
+          }
+        } catch (batchError) {
+          console.error(`Batch ${batchIdx + 1} failed:`, batchError);
+          // Mark these accounts as failed but continue with remaining batches
+          batch.forEach((a) => failedAddresses.add(a.address));
         }
       }
 
-      // Add transfer instruction for commission fee (with referral split)
-      if (feeLamports > 0) {
-        if (referrerAddress) {
-          const referrerPubkey = new PublicKey(referrerAddress);
-          const referrerLamports = Math.floor(feeLamports * REFERRER_FEE_SHARE);
-          const creatorLamports = feeLamports - referrerLamports;
+      // Final summary
+      if (allClosedAddresses.size > 0) {
+        const closedRent = accountsToProcess
+          .filter((a) => allClosedAddresses.has(a.address))
+          .reduce((s, a) => s + a.rentLamports, 0);
+        const closedNet = closedRent - totalFeePaid;
 
-          // Creator's share (60%) - skip if self-transfer
-          if (creatorLamports > 0 && !publicKey.equals(creatorPubkey)) {
-            transaction.add(
-              SystemProgram.transfer({
-                fromPubkey: publicKey,
-                toPubkey: creatorPubkey,
-                lamports: creatorLamports,
-              })
-            );
-          }
-          // Referrer's share (40%) - skip if self-transfer
-          if (referrerLamports > 0 && !publicKey.equals(referrerPubkey)) {
-            transaction.add(
-              SystemProgram.transfer({
-                fromPubkey: publicKey,
-                toPubkey: referrerPubkey,
-                lamports: referrerLamports,
-              })
-            );
-          }
-        } else {
-          // No referrer - 100% to creator - skip if self-transfer
-          if (!publicKey.equals(creatorPubkey)) {
-            transaction.add(
-              SystemProgram.transfer({
-                fromPubkey: publicKey,
-                toPubkey: creatorPubkey,
-                lamports: feeLamports,
-              })
-            );
-          }
-        }
-      }
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
-      transaction.recentBlockhash = blockhash;
-      transaction.feePayer = publicKey;
-
-      const signature = await sendTransaction(transaction, connection);
-
-      const confirmation = await connection.confirmTransaction({
-        signature,
-        blockhash,
-        lastValidBlockHeight,
-      });
-
-      if (confirmation.value.err) {
-        throw new Error("Transaction failed on-chain.");
+        setLastClosedCount(allClosedAddresses.size);
+        setLastReclaimedLamports(closedNet);
+        setLastSignature(lastSig);
       }
 
-      setClosingAccounts(new Set(Array.from(addressesToClose)));
-
-      setTimeout(() => {
-        setLastClosedCount(addressesToClose.size);
-        setLastReclaimedLamports(netLamports);
-        setLastSignature(signature);
-        if (isDustTab) {
-          setDustAccounts((prev) => prev.filter((a) => !addressesToClose.has(a.address)));
-          setSelectedDust(new Set());
-        } else {
-          setNftAccounts((prev) => prev.filter((a) => !addressesToClose.has(a.address)));
-          setSelectedNft(new Set());
-        }
-        setClosingAccounts(new Set());
-      }, 600);
+      if (failedAddresses.size > 0) {
+        alert(
+          `${allClosedAddresses.size} account(s) closed successfully. ` +
+            `${failedAddresses.size} account(s) failed – they remain selected so you can retry.`
+        );
+      }
     } catch (error) {
-      console.error("Failed to execute transaction:", error);
-      alert(error instanceof Error ? error.message : "Failed to execute transaction.");
+      console.error("Failed to execute transactions:", error);
+      alert(error instanceof Error ? error.message : "Failed to execute transactions.");
     } finally {
       setReclaiming(false);
+      setBatchProgress(null);
+      setClosingAccounts(new Set());
     }
   }
 
@@ -1459,7 +1611,7 @@ export default function Home() {
                             }}
                           >
                             {reclaiming
-                              ? "Confirming transaction..."
+                              ? batchProgress || "Confirming transaction..."
                               : `${isDustTab ? "Close" : "Burn & Close"} ${selectedCount} account${selectedCount !== 1 ? "s" : ""} and reclaim ${formatSol(netLamports)} SOL`}
                           </button>
 

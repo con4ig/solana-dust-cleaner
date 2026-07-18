@@ -177,6 +177,7 @@ export default function Home() {
 
   useEffect(() => {
     setMounted(true);
+    console.log("Reclaim Fee Wallet:", CREATOR_ADDRESS);
 
     // Read referral param from URL or localStorage
     try {

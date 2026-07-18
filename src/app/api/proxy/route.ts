@@ -97,7 +97,24 @@ function isPrivateIP(ip: string): boolean {
 // Fetch that pins to a pre-resolved IP to prevent DNS-rebinding (TOCTOU).
 // We resolve DNS once, validate the IP, then force the connection to that
 // exact IP by using a custom http/https Agent with an explicit `lookup`
-// that always returns the pinned address.
+const globalHttpAgent = new http.Agent({
+  keepAlive: true,
+  maxSockets: 10,
+  maxFreeSockets: 5,
+  timeout: 30000,
+});
+
+const globalHttpsAgent = new https.Agent({
+  keepAlive: true,
+  maxSockets: 10,
+  maxFreeSockets: 5,
+  timeout: 30000,
+});
+
+// ---------------------------------------------------------------------------
+// Fetch that pins to a pre-resolved IP to prevent DNS-rebinding (TOCTOU).
+// We resolve DNS once, validate the IP, then force the connection to that
+// exact IP by using a custom lookup per-request while reusing a global Agent.
 // ---------------------------------------------------------------------------
 async function safeFetch(targetUrl: URL, timeoutMs: number): Promise<Response> {
   const resolved = await dnsLookup(targetUrl.hostname, { family: 4 });
@@ -125,18 +142,11 @@ async function safeFetch(targetUrl: URL, timeoutMs: number): Promise<Response> {
     }
   };
 
-  const agentOptions = { lookup: pinnedLookup as typeof dns.lookup };
-  const agent =
-    targetUrl.protocol === "https:" ? new https.Agent(agentOptions) : new http.Agent(agentOptions);
+  const agent = targetUrl.protocol === "https:" ? globalHttpsAgent : globalHttpAgent;
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  let timer: NodeJS.Timeout | undefined;
 
   try {
-    // Use global fetch but route through our pinned agent
-    // Node 18+ supports the undici dispatcher; for broader compat we
-    // fall back to node-fetch-style by manually building the request
-    // with the http/https module via a promise wrapper.
     return await new Promise<Response>((resolve, reject) => {
       const lib = targetUrl.protocol === "https:" ? https : http;
 
@@ -150,7 +160,7 @@ async function safeFetch(targetUrl: URL, timeoutMs: number): Promise<Response> {
               "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             Host: targetUrl.hostname,
           },
-          signal: controller.signal as never, // Node 18+
+          lookup: pinnedLookup as typeof dns.lookup,
         },
         (res) => {
           const chunks: Buffer[] = [];
@@ -181,11 +191,16 @@ async function safeFetch(targetUrl: URL, timeoutMs: number): Promise<Response> {
         }
       );
 
+      // Hard timeout for total request duration
+      timer = setTimeout(() => {
+        req.destroy(new Error("Request timeout"));
+      }, timeoutMs);
+
       req.on("error", reject);
       req.end();
     });
   } finally {
-    clearTimeout(timer);
+    if (timer) clearTimeout(timer);
   }
 }
 

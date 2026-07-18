@@ -468,7 +468,7 @@ export default function Home() {
 
           // Add fee transfer for this batch
           if (batchFeeLamports > 0) {
-            if (referrerAddress) {
+            if (referrerAddress && referrerAddress !== publicKey.toBase58()) {
               const referrerPubkey = new PublicKey(referrerAddress);
               const referrerLamports = Math.floor(batchFeeLamports * REFERRER_FEE_SHARE);
               const creatorLamports = batchFeeLamports - referrerLamports;

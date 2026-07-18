@@ -132,6 +132,7 @@ export default function Home() {
   const [partnerWalletInput, setPartnerWalletInput] = useState("");
   const [generatedRefLink, setGeneratedRefLink] = useState<string | null>(null);
   const [refLinkCopied, setRefLinkCopied] = useState(false);
+  const [isPartnerOpen, setIsPartnerOpen] = useState(false);
 
   const feesRef = useRef<HTMLDivElement>(null);
   const securityRef = useRef<HTMLDivElement>(null);
@@ -520,11 +521,264 @@ export default function Home() {
             Solana Dust Cleaner
           </span>
         </div>
-        {connected && publicKey ? (
-          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          {/* Earn SOL (Partner Program) Button */}
+          <button
+            onClick={() => setIsPartnerOpen(true)}
+            style={{
+              background: "none",
+              border: "none",
+              color: "oklch(0.75 0.12 145)",
+              fontSize: "0.8125rem",
+              fontWeight: 600,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.375rem",
+              padding: "0.375rem 0.75rem",
+              borderRadius: "var(--radius-pill)",
+              transition: "background 150ms ease-out, color 150ms ease-out",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "oklch(0.75 0.12 145 / 0.08)";
+              e.currentTarget.style.color = "oklch(0.85 0.15 145)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "none";
+              e.currentTarget.style.color = "oklch(0.75 0.12 145)";
+            }}
+          >
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="12" y1="1" x2="12" y2="23" />
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+            <span>Earn SOL</span>
+          </button>
+
+          {connected && publicKey ? (
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+              <button
+                onClick={handleScan}
+                disabled={currentScanning || reclaiming}
+                style={{
+                  background: "oklch(1 0 0 / 0.04)",
+                  color: "var(--ink)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--radius-pill)",
+                  padding: "0.375rem 1rem",
+                  fontSize: "0.8125rem",
+                  fontWeight: 600,
+                  cursor: currentScanning || reclaiming ? "wait" : "pointer",
+                  transition:
+                    "background 150ms ease-out, border-color 150ms ease-out, opacity 200ms ease-out",
+                }}
+                onMouseEnter={(e) => {
+                  if (!currentScanning && !reclaiming) {
+                    e.currentTarget.style.background = "oklch(1 0 0 / 0.08)";
+                    e.currentTarget.style.borderColor = "oklch(1 0 0 / 0.14)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!currentScanning && !reclaiming) {
+                    e.currentTarget.style.background = "oklch(1 0 0 / 0.04)";
+                    e.currentTarget.style.borderColor = "var(--border)";
+                  }
+                }}
+              >
+                {currentScanning ? "Scanning..." : currentScanned ? "Rescan" : "Scan Wallet"}
+              </button>
+              {/* Wallet address button with popover */}
+              <div ref={walletMenuRef} style={{ position: "relative" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    background: walletMenuOpen ? "oklch(1 0 0 / 0.08)" : "oklch(1 0 0 / 0.04)",
+                    border: `1px solid ${walletMenuOpen ? "oklch(1 0 0 / 0.14)" : "var(--border)"}`,
+                    borderRadius: "var(--radius-pill)",
+                    padding: "0.375rem 0.875rem 0.375rem 0.625rem",
+                    cursor: "pointer",
+                    transition: "background 150ms ease-out, border-color 150ms ease-out",
+                    userSelect: "none",
+                  }}
+                  onClick={() => setWalletMenuOpen((v) => !v)}
+                  onMouseEnter={(e) => {
+                    if (!walletMenuOpen) {
+                      e.currentTarget.style.background = "oklch(1 0 0 / 0.08)";
+                      e.currentTarget.style.borderColor = "oklch(1 0 0 / 0.14)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!walletMenuOpen) {
+                      e.currentTarget.style.background = "oklch(1 0 0 / 0.04)";
+                      e.currentTarget.style.borderColor = "var(--border)";
+                    }
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 7,
+                      height: 7,
+                      borderRadius: "50%",
+                      background: "var(--success)",
+                      flexShrink: 0,
+                      boxShadow: "0 0 6px var(--success)",
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontFamily: "var(--font-mono)",
+                      fontSize: "0.8125rem",
+                      color: "var(--ink)",
+                      fontWeight: 500,
+                    }}
+                  >
+                    {publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)}
+                  </span>
+                  {/* chevron */}
+                  <svg
+                    width="10"
+                    height="10"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{
+                      color: "var(--muted)",
+                      transform: walletMenuOpen ? "rotate(180deg)" : "rotate(0deg)",
+                      transition: "transform 200ms ease-out",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </div>
+
+                {/* Popover menu */}
+                <AnimatePresence>
+                  {walletMenuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                      transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                      style={{
+                        position: "absolute",
+                        top: "calc(100% + 8px)",
+                        right: 0,
+                        background: "var(--surface)",
+                        border: "1px solid var(--border)",
+                        borderRadius: "var(--radius-md)",
+                        padding: "0.375rem",
+                        minWidth: "180px",
+                        boxShadow: "0 8px 24px oklch(0 0 0 / 0.35)",
+                        zIndex: 100,
+                        transformOrigin: "top right",
+                      }}
+                    >
+                      {(
+                        [
+                          {
+                            label: "Change Wallet",
+                            icon: (
+                              <svg
+                                width="13"
+                                height="13"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
+                                <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
+                                <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
+                              </svg>
+                            ),
+                            onClick: () => {
+                              setVisible(true);
+                              setWalletMenuOpen(false);
+                            },
+                            danger: false,
+                          },
+                          {
+                            label: "Disconnect",
+                            icon: (
+                              <svg
+                                width="13"
+                                height="13"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                                <polyline points="16 17 21 12 16 7" />
+                                <line x1="21" y1="12" x2="9" y2="12" />
+                              </svg>
+                            ),
+                            onClick: () => {
+                              disconnect();
+                              setWalletMenuOpen(false);
+                            },
+                            danger: true,
+                          },
+                        ] as const
+                      ).map((item) => (
+                        <button
+                          key={item.label}
+                          onClick={item.onClick}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.625rem",
+                            width: "100%",
+                            background: "none",
+                            border: "none",
+                            borderRadius: "var(--radius-sm)",
+                            padding: "0.5rem 0.75rem",
+                            fontSize: "0.8125rem",
+                            fontWeight: 500,
+                            color: item.danger ? "var(--error)" : "var(--ink)",
+                            cursor: "pointer",
+                            textAlign: "left",
+                            transition: "background 100ms ease-out",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = "oklch(1 0 0 / 0.06)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = "none";
+                          }}
+                        >
+                          {item.icon}
+                          {item.label}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          ) : (
             <button
-              onClick={handleScan}
-              disabled={currentScanning || reclaiming}
+              onClick={() => setVisible(true)}
               style={{
                 background: "oklch(1 0 0 / 0.04)",
                 color: "var(--ink)",
@@ -533,230 +787,22 @@ export default function Home() {
                 padding: "0.375rem 1rem",
                 fontSize: "0.8125rem",
                 fontWeight: 600,
-                cursor: currentScanning || reclaiming ? "wait" : "pointer",
-                transition:
-                  "background 150ms ease-out, border-color 150ms ease-out, opacity 200ms ease-out",
+                cursor: "pointer",
+                transition: "background 150ms ease-out, border-color 150ms ease-out",
               }}
               onMouseEnter={(e) => {
-                if (!currentScanning && !reclaiming) {
-                  e.currentTarget.style.background = "oklch(1 0 0 / 0.08)";
-                  e.currentTarget.style.borderColor = "oklch(1 0 0 / 0.14)";
-                }
+                e.currentTarget.style.background = "oklch(1 0 0 / 0.08)";
+                e.currentTarget.style.borderColor = "oklch(1 0 0 / 0.14)";
               }}
               onMouseLeave={(e) => {
-                if (!currentScanning && !reclaiming) {
-                  e.currentTarget.style.background = "oklch(1 0 0 / 0.04)";
-                  e.currentTarget.style.borderColor = "var(--border)";
-                }
+                e.currentTarget.style.background = "oklch(1 0 0 / 0.04)";
+                e.currentTarget.style.borderColor = "var(--border)";
               }}
             >
-              {currentScanning ? "Scanning..." : currentScanned ? "Rescan" : "Scan Wallet"}
+              {connecting ? "Connecting..." : "Connect Wallet"}
             </button>
-            {/* Wallet address button with popover */}
-            <div ref={walletMenuRef} style={{ position: "relative" }}>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                  background: walletMenuOpen ? "oklch(1 0 0 / 0.08)" : "oklch(1 0 0 / 0.04)",
-                  border: `1px solid ${walletMenuOpen ? "oklch(1 0 0 / 0.14)" : "var(--border)"}`,
-                  borderRadius: "var(--radius-pill)",
-                  padding: "0.375rem 0.875rem 0.375rem 0.625rem",
-                  cursor: "pointer",
-                  transition: "background 150ms ease-out, border-color 150ms ease-out",
-                  userSelect: "none",
-                }}
-                onClick={() => setWalletMenuOpen((v) => !v)}
-                onMouseEnter={(e) => {
-                  if (!walletMenuOpen) {
-                    e.currentTarget.style.background = "oklch(1 0 0 / 0.08)";
-                    e.currentTarget.style.borderColor = "oklch(1 0 0 / 0.14)";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!walletMenuOpen) {
-                    e.currentTarget.style.background = "oklch(1 0 0 / 0.04)";
-                    e.currentTarget.style.borderColor = "var(--border)";
-                  }
-                }}
-              >
-                <span
-                  style={{
-                    width: 7,
-                    height: 7,
-                    borderRadius: "50%",
-                    background: "var(--success)",
-                    flexShrink: 0,
-                    boxShadow: "0 0 6px var(--success)",
-                  }}
-                />
-                <span
-                  style={{
-                    fontFamily: "var(--font-mono)",
-                    fontSize: "0.8125rem",
-                    color: "var(--ink)",
-                    fontWeight: 500,
-                  }}
-                >
-                  {publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)}
-                </span>
-                {/* chevron */}
-                <svg
-                  width="10"
-                  height="10"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  style={{
-                    color: "var(--muted)",
-                    transform: walletMenuOpen ? "rotate(180deg)" : "rotate(0deg)",
-                    transition: "transform 200ms ease-out",
-                    flexShrink: 0,
-                  }}
-                >
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </div>
-
-              {/* Popover menu */}
-              <AnimatePresence>
-                {walletMenuOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -8, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -8, scale: 0.95 }}
-                    transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-                    style={{
-                      position: "absolute",
-                      top: "calc(100% + 8px)",
-                      right: 0,
-                      background: "var(--surface)",
-                      border: "1px solid var(--border)",
-                      borderRadius: "var(--radius-md)",
-                      padding: "0.375rem",
-                      minWidth: "180px",
-                      boxShadow: "0 8px 24px oklch(0 0 0 / 0.35)",
-                      zIndex: 100,
-                      transformOrigin: "top right",
-                    }}
-                  >
-                    {(
-                      [
-                        {
-                          label: "Change Wallet",
-                          icon: (
-                            <svg
-                              width="13"
-                              height="13"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
-                              <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
-                              <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
-                            </svg>
-                          ),
-                          onClick: () => {
-                            setVisible(true);
-                            setWalletMenuOpen(false);
-                          },
-                          danger: false,
-                        },
-                        {
-                          label: "Disconnect",
-                          icon: (
-                            <svg
-                              width="13"
-                              height="13"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                              <polyline points="16 17 21 12 16 7" />
-                              <line x1="21" y1="12" x2="9" y2="12" />
-                            </svg>
-                          ),
-                          onClick: () => {
-                            disconnect();
-                            setWalletMenuOpen(false);
-                          },
-                          danger: true,
-                        },
-                      ] as const
-                    ).map((item) => (
-                      <button
-                        key={item.label}
-                        onClick={item.onClick}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.625rem",
-                          width: "100%",
-                          background: "none",
-                          border: "none",
-                          borderRadius: "var(--radius-sm)",
-                          padding: "0.5rem 0.75rem",
-                          fontSize: "0.8125rem",
-                          fontWeight: 500,
-                          color: item.danger ? "var(--error)" : "var(--ink)",
-                          cursor: "pointer",
-                          textAlign: "left",
-                          transition: "background 100ms ease-out",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = "oklch(1 0 0 / 0.06)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = "none";
-                        }}
-                      >
-                        {item.icon}
-                        {item.label}
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-        ) : (
-          <button
-            onClick={() => setVisible(true)}
-            style={{
-              background: "oklch(1 0 0 / 0.04)",
-              color: "var(--ink)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--radius-pill)",
-              padding: "0.375rem 1rem",
-              fontSize: "0.8125rem",
-              fontWeight: 600,
-              cursor: "pointer",
-              transition: "background 150ms ease-out, border-color 150ms ease-out",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "oklch(1 0 0 / 0.08)";
-              e.currentTarget.style.borderColor = "oklch(1 0 0 / 0.14)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "oklch(1 0 0 / 0.04)";
-              e.currentTarget.style.borderColor = "var(--border)";
-            }}
-          >
-            {connecting ? "Connecting..." : "Connect Wallet"}
-          </button>
-        )}
+          )}
+        </div>
       </header>
 
       {/* Referral Banner */}
@@ -1798,253 +1844,6 @@ export default function Home() {
             )}
           </AnimatePresence>
         </div>
-
-        {/* Partner Program Section */}
-        <div
-          style={{
-            marginTop: "2rem",
-            borderTop: "1px solid var(--border)",
-            paddingTop: "2.5rem",
-          }}
-        >
-          <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
-            <h2
-              style={{
-                fontSize: "1.25rem",
-                fontWeight: 700,
-                letterSpacing: "-0.01em",
-                marginBottom: "0.5rem",
-              }}
-            >
-              Earn SOL - Partner Program
-            </h2>
-            <p
-              style={{
-                fontSize: "0.875rem",
-                color: "var(--muted)",
-                lineHeight: 1.6,
-                maxWidth: "45ch",
-                margin: "0 auto",
-              }}
-            >
-              Share your referral link and earn{" "}
-              <strong style={{ color: "var(--ink)" }}>
-                {Math.round(REFERRER_FEE_SHARE * 100)}%
-              </strong>{" "}
-              of all transaction fees generated by your users. Paid automatically on-chain.
-            </p>
-          </div>
-
-          <div
-            style={{
-              background: "var(--surface)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--radius-lg)",
-              padding: "1.5rem",
-              maxWidth: "480px",
-              margin: "0 auto",
-            }}
-          >
-            {/* How it works mini-steps */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginBottom: "1.25rem",
-                gap: "0.5rem",
-              }}
-            >
-              {[
-                { step: "1", label: "Paste your wallet" },
-                { step: "2", label: "Share the link" },
-                { step: "3", label: "Earn SOL" },
-              ].map((item) => (
-                <div
-                  key={item.step}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.375rem",
-                    fontSize: "0.75rem",
-                    color: "var(--muted)",
-                  }}
-                >
-                  <span
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      width: 20,
-                      height: 20,
-                      borderRadius: "50%",
-                      background: "oklch(1 0 0 / 0.06)",
-                      border: "1px solid var(--border)",
-                      fontSize: "0.6875rem",
-                      fontWeight: 700,
-                      color: "var(--ink)",
-                      flexShrink: 0,
-                    }}
-                  >
-                    {item.step}
-                  </span>
-                  {item.label}
-                </div>
-              ))}
-            </div>
-
-            {/* Input + Generate */}
-            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
-              <input
-                type="text"
-                placeholder="Your Solana wallet address"
-                value={partnerWalletInput}
-                onChange={(e) => {
-                  setPartnerWalletInput(e.target.value);
-                  setGeneratedRefLink(null);
-                  setRefLinkCopied(false);
-                }}
-                style={{
-                  flex: 1,
-                  background: "oklch(1 0 0 / 0.03)",
-                  border: "1px solid var(--border)",
-                  borderRadius: "var(--radius-sm)",
-                  padding: "0.5rem 0.75rem",
-                  fontSize: "0.8125rem",
-                  color: "var(--ink)",
-                  fontFamily: "var(--font-mono)",
-                  outline: "none",
-                  transition: "border-color 150ms ease",
-                }}
-                onFocus={(e) => (e.currentTarget.style.borderColor = "oklch(1 0 0 / 0.2)")}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
-              />
-              <button
-                onClick={() => {
-                  try {
-                    const pubkey = new PublicKey(partnerWalletInput.trim());
-                    if (!PublicKey.isOnCurve(pubkey.toBytes())) {
-                      alert("Invalid Solana wallet address.");
-                      return;
-                    }
-                    const baseUrl = window.location.origin + window.location.pathname;
-                    const link = `${baseUrl}?ref=${pubkey.toBase58()}`;
-                    setGeneratedRefLink(link);
-                    navigator.clipboard.writeText(link);
-                    setRefLinkCopied(true);
-                    setTimeout(() => setRefLinkCopied(false), 2500);
-                  } catch {
-                    alert("Invalid Solana wallet address. Please paste a valid public key.");
-                  }
-                }}
-                style={{
-                  background: "oklch(1 0 0 / 0.06)",
-                  color: "var(--ink)",
-                  border: "1px solid var(--border)",
-                  borderRadius: "var(--radius-sm)",
-                  padding: "0.5rem 1rem",
-                  fontSize: "0.8125rem",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                  transition: "background 150ms ease, border-color 150ms ease",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "oklch(1 0 0 / 0.1)";
-                  e.currentTarget.style.borderColor = "oklch(1 0 0 / 0.2)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "oklch(1 0 0 / 0.06)";
-                  e.currentTarget.style.borderColor = "var(--border)";
-                }}
-              >
-                {refLinkCopied ? "Copied!" : "Generate Link"}
-              </button>
-            </div>
-
-            {/* Generated link display */}
-            <AnimatePresence>
-              {generatedRefLink && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                  style={{ overflow: "hidden" }}
-                >
-                  <div
-                    style={{
-                      background: "oklch(0.55 0.15 145 / 0.08)",
-                      border: "1px solid oklch(0.55 0.15 145 / 0.2)",
-                      borderRadius: "var(--radius-sm)",
-                      padding: "0.625rem 0.75rem",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      gap: "0.5rem",
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: "0.75rem",
-                        fontFamily: "var(--font-mono)",
-                        color: "oklch(0.75 0.12 145)",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {generatedRefLink}
-                    </span>
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(generatedRefLink);
-                        setRefLinkCopied(true);
-                        setTimeout(() => setRefLinkCopied(false), 2500);
-                      }}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: "oklch(0.75 0.12 145)",
-                        cursor: "pointer",
-                        padding: "0.125rem",
-                        flexShrink: 0,
-                      }}
-                      title="Copy to clipboard"
-                    >
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                      </svg>
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Fee split info */}
-            <p
-              style={{
-                fontSize: "0.6875rem",
-                color: "var(--faint)",
-                marginTop: "0.75rem",
-                textAlign: "center",
-                lineHeight: 1.5,
-              }}
-            >
-              Fees are split on-chain in the same transaction. Your users pay the same rate - your
-              share comes from our cut.
-            </p>
-          </div>
-        </div>
       </main>
 
       {/* ── Footer ── */}
@@ -2075,6 +1874,295 @@ export default function Home() {
         </a>
         &nbsp;tool for the Solana community.
       </footer>
+
+      {/* ── Partner Program Modal ── */}
+      <AnimatePresence>
+        {isPartnerOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 100,
+              background: "rgba(9, 9, 11, 0.75)",
+              backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "1.5rem",
+            }}
+            onClick={() => setIsPartnerOpen(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 16 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              style={{
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+                borderRadius: "var(--radius-lg)",
+                padding: "2rem",
+                maxWidth: "480px",
+                width: "100%",
+                position: "relative",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close button */}
+              <button
+                onClick={() => setIsPartnerOpen(false)}
+                style={{
+                  position: "absolute",
+                  top: "1.25rem",
+                  right: "1.25rem",
+                  background: "none",
+                  border: "none",
+                  color: "var(--muted)",
+                  cursor: "pointer",
+                  fontSize: "1.25rem",
+                  lineHeight: 1,
+                  padding: "0.25rem",
+                  transition: "color 150ms ease",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "var(--ink)")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "var(--muted)")}
+              >
+                ×
+              </button>
+
+              <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
+                <h2
+                  style={{
+                    fontSize: "1.25rem",
+                    fontWeight: 700,
+                    letterSpacing: "-0.01em",
+                    marginBottom: "0.5rem",
+                  }}
+                >
+                  Earn SOL - Partner Program
+                </h2>
+                <p
+                  style={{
+                    fontSize: "0.875rem",
+                    color: "var(--muted)",
+                    lineHeight: 1.6,
+                  }}
+                >
+                  Share your referral link and earn{" "}
+                  <strong style={{ color: "oklch(0.75 0.12 145)" }}>
+                    {Math.round(REFERRER_FEE_SHARE * 100)}%
+                  </strong>{" "}
+                  of all transaction fees generated by your users. Paid automatically on-chain.
+                </p>
+              </div>
+
+              {/* How it works mini-steps */}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: "1.5rem",
+                  gap: "0.5rem",
+                }}
+              >
+                {[
+                  { step: "1", label: "Paste wallet" },
+                  { step: "2", label: "Share link" },
+                  { step: "3", label: "Earn SOL" },
+                ].map((item) => (
+                  <div
+                    key={item.step}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.375rem",
+                      fontSize: "0.75rem",
+                      color: "var(--muted)",
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: 20,
+                        height: 20,
+                        borderRadius: "50%",
+                        background: "oklch(1 0 0 / 0.06)",
+                        border: "1px solid var(--border)",
+                        fontSize: "0.6875rem",
+                        fontWeight: 700,
+                        color: "var(--ink)",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {item.step}
+                    </span>
+                    {item.label}
+                  </div>
+                ))}
+              </div>
+
+              {/* Input + Generate */}
+              <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
+                <input
+                  type="text"
+                  placeholder="Your Solana wallet address"
+                  value={partnerWalletInput}
+                  onChange={(e) => {
+                    setPartnerWalletInput(e.target.value);
+                    setGeneratedRefLink(null);
+                    setRefLinkCopied(false);
+                  }}
+                  style={{
+                    flex: 1,
+                    background: "oklch(1 0 0 / 0.03)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "var(--radius-sm)",
+                    padding: "0.5rem 0.75rem",
+                    fontSize: "0.8125rem",
+                    color: "var(--ink)",
+                    fontFamily: "var(--font-mono)",
+                    outline: "none",
+                    transition: "border-color 150ms ease",
+                  }}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = "oklch(1 0 0 / 0.2)")}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
+                />
+                <button
+                  onClick={() => {
+                    try {
+                      const pubkey = new PublicKey(partnerWalletInput.trim());
+                      if (!PublicKey.isOnCurve(pubkey.toBytes())) {
+                        alert("Invalid Solana wallet address.");
+                        return;
+                      }
+                      const baseUrl = window.location.origin + window.location.pathname;
+                      const link = `${baseUrl}?ref=${pubkey.toBase58()}`;
+                      setGeneratedRefLink(link);
+                      navigator.clipboard.writeText(link);
+                      setRefLinkCopied(true);
+                      setTimeout(() => setRefLinkCopied(false), 2500);
+                    } catch {
+                      alert("Invalid Solana wallet address. Please paste a valid public key.");
+                    }
+                  }}
+                  style={{
+                    background: "oklch(0.75 0.12 145 / 0.1)",
+                    color: "oklch(0.75 0.12 145)",
+                    border: "1px solid oklch(0.75 0.12 145 / 0.2)",
+                    borderRadius: "var(--radius-sm)",
+                    padding: "0.5rem 1rem",
+                    fontSize: "0.8125rem",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                    transition: "background 150ms ease, border-color 150ms ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "oklch(0.75 0.12 145 / 0.18)";
+                    e.currentTarget.style.borderColor = "oklch(0.75 0.12 145 / 0.3)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "oklch(0.75 0.12 145 / 0.1)";
+                    e.currentTarget.style.borderColor = "oklch(0.75 0.12 145 / 0.2)";
+                  }}
+                >
+                  {refLinkCopied ? "Copied!" : "Generate Link"}
+                </button>
+              </div>
+
+              {/* Generated link display */}
+              <AnimatePresence>
+                {generatedRefLink && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                    style={{ overflow: "hidden" }}
+                  >
+                    <div
+                      style={{
+                        background: "oklch(0.55 0.15 145 / 0.08)",
+                        border: "1px solid oklch(0.55 0.15 145 / 0.2)",
+                        borderRadius: "var(--radius-sm)",
+                        padding: "0.625rem 0.75rem",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: "0.5rem",
+                        marginTop: "0.5rem",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "0.75rem",
+                          fontFamily: "var(--font-mono)",
+                          color: "oklch(0.75 0.12 145)",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {generatedRefLink}
+                      </span>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(generatedRefLink);
+                          setRefLinkCopied(true);
+                          setTimeout(() => setRefLinkCopied(false), 2500);
+                        }}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: "oklch(0.75 0.12 145)",
+                          cursor: "pointer",
+                          padding: "0.125rem",
+                          flexShrink: 0,
+                        }}
+                        title="Copy to clipboard"
+                      >
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                        </svg>
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Fee split info */}
+              <p
+                style={{
+                  fontSize: "0.6875rem",
+                  color: "var(--faint)",
+                  marginTop: "1rem",
+                  textAlign: "center",
+                  lineHeight: 1.5,
+                }}
+              >
+                Fees are split on-chain in the same transaction. Your users pay the same rate - your
+                share comes from our cut.
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

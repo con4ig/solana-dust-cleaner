@@ -93,28 +93,9 @@ function isPrivateIP(ip: string): boolean {
   return false;
 }
 
-// ---------------------------------------------------------------------------
 // Fetch that pins to a pre-resolved IP to prevent DNS-rebinding (TOCTOU).
 // We resolve DNS once, validate the IP, then force the connection to that
-// exact IP by using a custom http/https Agent with an explicit `lookup`
-const globalHttpAgent = new http.Agent({
-  keepAlive: true,
-  maxSockets: 10,
-  maxFreeSockets: 5,
-  timeout: 30000,
-});
-
-const globalHttpsAgent = new https.Agent({
-  keepAlive: true,
-  maxSockets: 10,
-  maxFreeSockets: 5,
-  timeout: 30000,
-});
-
-// ---------------------------------------------------------------------------
-// Fetch that pins to a pre-resolved IP to prevent DNS-rebinding (TOCTOU).
-// We resolve DNS once, validate the IP, then force the connection to that
-// exact IP by using a custom lookup per-request while reusing a global Agent.
+// exact IP by using a custom http/https Agent per-request.
 // ---------------------------------------------------------------------------
 async function safeFetch(targetUrl: URL, timeoutMs: number): Promise<Response> {
   const resolved = await dnsLookup(targetUrl.hostname, { family: 4 });
@@ -142,7 +123,13 @@ async function safeFetch(targetUrl: URL, timeoutMs: number): Promise<Response> {
     }
   };
 
-  const agent = targetUrl.protocol === "https:" ? globalHttpsAgent : globalHttpAgent;
+  // Agent is instantiated per-request with keepAlive: false to prevent listener leaks.
+  const agent =
+    targetUrl.protocol === "https:"
+      ? new https.Agent({ lookup: pinnedLookup as typeof dns.lookup, keepAlive: false })
+      : new http.Agent({ lookup: pinnedLookup as typeof dns.lookup, keepAlive: false });
+
+  agent.setMaxListeners(50);
 
   let timer: NodeJS.Timeout | undefined;
 
@@ -160,7 +147,6 @@ async function safeFetch(targetUrl: URL, timeoutMs: number): Promise<Response> {
               "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             Host: targetUrl.hostname,
           },
-          lookup: pinnedLookup as typeof dns.lookup,
         },
         (res) => {
           const chunks: Buffer[] = [];
@@ -246,7 +232,15 @@ export async function GET(request: Request) {
       );
     }
 
-    const data = await response.json();
+    const text = await response.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (parseError) {
+      console.error("Upstream returned non-JSON data (first 200 chars):", text.substring(0, 200));
+      return NextResponse.json({ error: "Upstream returned invalid JSON" }, { status: 502 });
+    }
+
     return NextResponse.json(data);
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unknown error";

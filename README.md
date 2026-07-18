@@ -1,36 +1,40 @@
-# Solana Dust Cleaner
+# Solana Utility Toolkit
 
-Close empty SPL token accounts and reclaim your locked SOL rent deposits - in one click.
+Close empty token accounts and burn spam NFTs to reclaim your locked SOL rent deposits - in one click.
 
-Every time you buy a token, receive an airdrop, or use a DeFi protocol on Solana, a new token account is created in your wallet. Each one locks **~0.002039 SOL** as a rent deposit. When those tokens reach zero balance, the account stays on-chain, silently holding your SOL hostage.
+Every time you buy a token, receive an airdrop, or use a DeFi protocol on Solana, a new token account is created in your wallet. Each one locks **~0.002039 SOL** as a rent deposit. When those tokens reach zero balance (or if you receive unwanted spam NFTs), those accounts stay on-chain, silently holding your SOL hostage.
 
-**Solana Dust Cleaner** finds all those empty accounts and lets you close them and get your SOL back instantly.
+**Solana Utility Toolkit** helps you tidy up your wallet, burn unwanted assets, and get your SOL back instantly.
 
 ---
 
 ## Features
 
-- **Instant wallet scan** - finds all empty (zero-balance) SPL token accounts
-- **Selective closure** - pick which accounts to close, or select all
-- **Real-time SOL estimate** - see exactly how much you'll recover before signing
-- **Non-custodial** - your keys never leave your wallet; we never touch your assets
-- **Transparent fees** - tiered commission shown before every transaction
-- **No custom contracts** - only official Solana System Program & SPL Token Program
-- **Dark UI** - clean, minimal interface designed for fast, confident action
+- **Empty Accounts Cleaner** - scans your wallet for empty (zero-balance) SPL token accounts and closes them.
+- **Spam NFT Burner** - permanently burns unwanted spam NFTs/tokens and closes their token accounts to reclaim rent.
+- **On-chain Metadata Resolution** - decodes Metaplex Metadata V1 PDA accounts to show name and symbol for NFTs.
+- **Dynamic CORS Proxy API** - uses an internal proxy route (`/api/proxy`) to fetch remote NFT image metadata without browser CORS blocks.
+- **Framer Motion Transitions** - ultra-smooth tab slide-out animations and page transition animations.
+- **Auto-Scrolling Easing** - automatically scrolls viewports to the bottom of accordion boxes smoothly when expanded.
+- **Selective Reclaiming** - pick exactly which accounts to close/burn, or select all with one click.
+- **Real-time SOL Estimate** - see exactly how much gross and net SOL you'll recover before signing.
+- **Non-custodial** - your private keys never leave your wallet; we never touch your assets.
+- **No Custom Contracts** - uses official, audited Solana System and SPL Token Programs only.
 
 ---
 
 ## How It Works
 
 ```
-Connect wallet -> Scan -> Select accounts -> Sign one transaction -> Receive SOL
+Connect Wallet -> Select Tab (Accounts / NFTs) -> Scan -> Select Items -> Reclaim & Burn -> Receive SOL
 ```
 
 1. **Connect** your Phantom, Solflare, or any Wallet Standard-compatible wallet.
-2. **Scan** your wallet - the app fetches all SPL token accounts with zero balance.
-3. **Select** which accounts you want to close (all selected by default).
-4. **Sign** a single bundled transaction in your wallet popup.
-5. **Receive** the unlocked SOL rent directly to your wallet, instantly on confirmation.
+2. **Select Tab** - choose "Empty Accounts" or "Spam NFTs" depending on what you want to clean.
+3. **Scan** - the app fetches accounts/tokens from the chain and resolves metadata.
+4. **Select** which items you want to clean/burn (all selected by default).
+5. **Sign** a single bundled transaction safely in your wallet popup.
+6. **Receive** the unlocked SOL rent directly to your wallet instantly on transaction confirmation.
 
 ---
 
@@ -53,8 +57,8 @@ The fee is processed as a standard `SystemProgram.transfer`, fully visible in yo
 This tool is built with transparency as a core design principle:
 
 - **No custom smart contracts** - every instruction uses the official, audited Solana System Program and SPL Token Program. There is no custom bytecode to audit or trust.
-- **Enforced by the blockchain** - the SPL Token Program will reject any close instruction for an account that still holds tokens. You cannot accidentally close a funded account.
-- **Fully auditable** - your wallet (e.g. Phantom) shows the exact decoded instructions before you sign: `CloseAccount` per empty account + one `Transfer` for the fee.
+- **Enforced by the blockchain** - the SPL Token Program will reject any close instruction for a standard token account that still holds tokens. Your active funded tokens are mathematically safe.
+- **Fully auditable** - your wallet (e.g. Phantom) shows the exact decoded instructions before you sign: `Burn` and `CloseAccount` per account + one `Transfer` for the fee.
 - **Open source** - all code is public and can be run locally on your own machine.
 
 ---

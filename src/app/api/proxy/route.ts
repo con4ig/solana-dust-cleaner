@@ -111,10 +111,18 @@ async function safeFetch(targetUrl: URL, timeoutMs: number): Promise<Response> {
   // Custom lookup that always returns the pinned IP so Node never re-resolves.
   const pinnedLookup = (
     _hostname: string,
-    _options: Record<string, unknown>,
-    callback: (err: NodeJS.ErrnoException | null, address: string, family: number) => void
+    options: Record<string, unknown>,
+    callback: (
+      err: NodeJS.ErrnoException | null,
+      addresses: string | Array<{ address: string; family: number }>,
+      family?: number
+    ) => void
   ) => {
-    callback(null, pinnedIP, family);
+    if (options.all) {
+      callback(null, [{ address: pinnedIP, family }]);
+    } else {
+      callback(null, pinnedIP, family);
+    }
   };
 
   const agentOptions = { lookup: pinnedLookup as typeof dns.lookup };

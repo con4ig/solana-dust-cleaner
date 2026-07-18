@@ -759,7 +759,7 @@ export default function Home() {
         )}
       </header>
 
-      {/* ── Referral Banner ── */}
+      {/* Referral Banner */}
       <AnimatePresence>
         {referrerAddress && (
           <motion.div
@@ -832,7 +832,7 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* ── Main ── */}
+      {/* Main */}
       <main
         style={{
           flex: 1,
@@ -1799,7 +1799,7 @@ export default function Home() {
           </AnimatePresence>
         </div>
 
-        {/* ── Partner Program Section ── */}
+        {/* Partner Program Section */}
         <div
           style={{
             marginTop: "2rem",
@@ -1816,7 +1816,7 @@ export default function Home() {
                 marginBottom: "0.5rem",
               }}
             >
-              Earn SOL — Partner Program
+              Earn SOL - Partner Program
             </h2>
             <p
               style={{
@@ -2040,7 +2040,7 @@ export default function Home() {
                 lineHeight: 1.5,
               }}
             >
-              Fees are split on-chain in the same transaction. Your users pay the same rate — your
+              Fees are split on-chain in the same transaction. Your users pay the same rate - your
               share comes from our cut.
             </p>
           </div>

@@ -380,7 +380,7 @@ export default function Home() {
             );
           }
         } else {
-          // No referrer – 100% to creator - skip if self-transfer
+          // No referrer - 100% to creator - skip if self-transfer
           if (!publicKey.equals(creatorPubkey)) {
             transaction.add(
               SystemProgram.transfer({
@@ -392,35 +392,6 @@ export default function Home() {
           }
         }
       }
-
-      console.log("=== Debug Reclaim Transaction ===");
-      console.log("Connected Wallet (publicKey):", publicKey.toBase58());
-      console.log("Creator Address (creatorPubkey):", creatorPubkey.toBase58());
-      console.log("Referrer Address (referrerAddress):", referrerAddress);
-      console.log("Total Selected Rent (lamports):", selectedRentLamports);
-      console.log("Total Fee (lamports):", feeLamports);
-
-      if (referrerAddress) {
-        const referrerPubkey = new PublicKey(referrerAddress);
-        const referrerLamports = Math.floor(feeLamports * REFERRER_FEE_SHARE);
-        const creatorLamports = feeLamports - referrerLamports;
-        console.log("Referrer Share (40%):", referrerLamports);
-        console.log("Creator Share (60%):", creatorLamports);
-        console.log("Is Creator Self-Transfer:", publicKey.equals(creatorPubkey));
-        console.log("Is Referrer Self-Transfer:", publicKey.equals(referrerPubkey));
-      } else {
-        console.log("No Referrer. Creator Share (100%):", feeLamports);
-        console.log("Is Creator Self-Transfer:", publicKey.equals(creatorPubkey));
-      }
-
-      console.log("Number of instructions:", transaction.instructions.length);
-      transaction.instructions.forEach((ix, index) => {
-        console.log(
-          `Instruction ${index}: programId = ${ix.programId.toBase58()}, keys count = ${ix.keys.length}`
-        );
-      });
-      console.log("=================================");
-
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = publicKey;
@@ -501,7 +472,7 @@ export default function Home() {
         flexDirection: "column",
       }}
     >
-      {/* ── Sticky Nav ── */}
+      {/* �� Sticky Nav �� */}
       <header
         style={{
           position: "sticky",
@@ -878,7 +849,7 @@ export default function Home() {
                 <span style={{ fontFamily: "var(--font-mono)", fontWeight: 600 }}>
                   {referrerAddress.slice(0, 4)}...{referrerAddress.slice(-4)}
                 </span>
-                {" · "}
+                {" - "}
                 Partner earns {Math.round(REFERRER_FEE_SHARE * 100)}% of fees
               </span>
               <button
@@ -901,7 +872,7 @@ export default function Home() {
                 onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.6")}
                 title="Remove referral"
               >
-                ×
+                x
               </button>
             </div>
           </motion.div>
@@ -959,7 +930,7 @@ export default function Home() {
           </motion.div>
         </AnimatePresence>
 
-        {/* ── Tabs ── */}
+        {/* �� Tabs �� */}
         <div
           style={{
             display: "flex",
@@ -1054,7 +1025,7 @@ export default function Home() {
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
           >
             {!connected ? (
-              /* ── Disconnected state ── */
+              /* �� Disconnected state �� */
               <div
                 style={{
                   background: "var(--surface)",
@@ -1094,7 +1065,7 @@ export default function Home() {
                 </button>
               </div>
             ) : (
-              /* ── Connected flow ── */
+              /* �� Connected flow �� */
               <div>
                 {/* Scanning indicator */}
                 {currentScanning && (
@@ -1566,7 +1537,7 @@ export default function Home() {
           </motion.div>
         </AnimatePresence>
 
-        {/* ── Collapsible Utility Disclosures ── */}
+        {/* �� Collapsible Utility Disclosures �� */}
         <div
           style={{
             marginTop: "4rem",
@@ -1876,7 +1847,7 @@ export default function Home() {
         </div>
       </main>
 
-      {/* ── Footer ── */}
+      {/* �� Footer �� */}
       <footer
         style={{
           borderTop: "1px solid var(--border)",
@@ -1905,7 +1876,7 @@ export default function Home() {
         &nbsp;tool for the Solana community.
       </footer>
 
-      {/* ── Partner Program Modal ── */}
+      {/* �� Partner Program Modal �� */}
       <AnimatePresence>
         {isPartnerOpen && (
           <motion.div
@@ -1961,7 +1932,7 @@ export default function Home() {
                 onMouseEnter={(e) => (e.currentTarget.style.color = "var(--ink)")}
                 onMouseLeave={(e) => (e.currentTarget.style.color = "var(--muted)")}
               >
-                ×
+                �
               </button>
 
               <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>

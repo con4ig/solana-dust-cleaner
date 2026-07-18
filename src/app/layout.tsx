@@ -4,35 +4,38 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://solanadustcleaner.com"),
-  title: "Solana Dust Cleaner - Reclaim Locked SOL Rent",
+  title: "Solana Dust Cleaner & Spam NFT Burner - Reclaim Locked SOL Rent",
   description:
-    "Close empty SPL token accounts and reclaim your locked SOL rent deposits. Free, transparent, open-source tool for the Solana community.",
+    "Close empty SPL token accounts and burn spam NFTs to reclaim your locked SOL rent deposits. Free, transparent, open-source utility for the Solana community.",
   keywords: [
     "Solana",
     "dust cleaner",
+    "spam NFT burner",
+    "burn spam NFTs",
     "rent reclaim",
     "reclaim SOL",
     "close empty token accounts",
     "Solana rent refund",
     "SPL token accounts",
     "Phantom wallet",
-    "Solana tool",
+    "Solana utility",
+    "Web3 tool",
   ],
   authors: [{ name: "Solana Dust Cleaner Community" }],
   openGraph: {
-    title: "Solana Dust Cleaner - Reclaim Locked SOL Rent",
+    title: "Solana Dust Cleaner & Spam NFT Burner - Reclaim Locked SOL Rent",
     description:
-      "Close empty SPL token accounts and reclaim your locked SOL rent deposits. Free, transparent, open-source tool for the Solana community.",
+      "Close empty SPL token accounts and burn spam NFTs to reclaim your locked SOL rent deposits. Free, transparent, open-source utility for the Solana community.",
     url: "https://solanadustcleaner.com",
-    siteName: "Solana Dust Cleaner",
+    siteName: "Solana Dust Cleaner & NFT Burner",
     locale: "en_US",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Solana Dust Cleaner - Reclaim Locked SOL Rent",
+    title: "Solana Dust Cleaner & Spam NFT Burner - Reclaim Locked SOL Rent",
     description:
-      "Close empty SPL token accounts and reclaim your locked SOL rent deposits. Free, transparent, open-source tool for the Solana community.",
+      "Close empty SPL token accounts and burn spam NFTs to reclaim your locked SOL rent deposits. Free, transparent, open-source utility for the Solana community.",
   },
   robots: {
     index: true,

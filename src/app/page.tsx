@@ -393,6 +393,34 @@ export default function Home() {
         }
       }
 
+      console.log("=== Debug Reclaim Transaction ===");
+      console.log("Connected Wallet (publicKey):", publicKey.toBase58());
+      console.log("Creator Address (creatorPubkey):", creatorPubkey.toBase58());
+      console.log("Referrer Address (referrerAddress):", referrerAddress);
+      console.log("Total Selected Rent (lamports):", selectedRentLamports);
+      console.log("Total Fee (lamports):", feeLamports);
+
+      if (referrerAddress) {
+        const referrerPubkey = new PublicKey(referrerAddress);
+        const referrerLamports = Math.floor(feeLamports * REFERRER_FEE_SHARE);
+        const creatorLamports = feeLamports - referrerLamports;
+        console.log("Referrer Share (40%):", referrerLamports);
+        console.log("Creator Share (60%):", creatorLamports);
+        console.log("Is Creator Self-Transfer:", publicKey.equals(creatorPubkey));
+        console.log("Is Referrer Self-Transfer:", publicKey.equals(referrerPubkey));
+      } else {
+        console.log("No Referrer. Creator Share (100%):", feeLamports);
+        console.log("Is Creator Self-Transfer:", publicKey.equals(creatorPubkey));
+      }
+
+      console.log("Number of instructions:", transaction.instructions.length);
+      transaction.instructions.forEach((ix, index) => {
+        console.log(
+          `Instruction ${index}: programId = ${ix.programId.toBase58()}, keys count = ${ix.keys.length}`
+        );
+      });
+      console.log("=================================");
+
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = publicKey;

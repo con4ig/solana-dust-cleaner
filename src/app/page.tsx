@@ -15,7 +15,7 @@ import { motion, AnimatePresence } from "framer-motion";
 // ---------- config ----------
 const CREATOR_ADDRESS =
   process.env.NEXT_PUBLIC_CREATOR_ADDRESS || "81kTLKjRBJBXt4CWz8mv5Fq9mSQVQsU9pDW81rbszxFT";
-const REFERRER_FEE_SHARE = 0.4; // 40% of fees go to referrer
+const REFERRER_FEE_SHARE = 0.5; // 50% of fees go to referrer
 
 const METADATA_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
 

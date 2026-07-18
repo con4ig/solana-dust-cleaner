@@ -28,6 +28,14 @@ export const metadata: Metadata = {
       "Close empty SPL token accounts and burn spam NFTs to reclaim your locked SOL rent deposits. Free, transparent, open-source utility for the Solana community.",
     url: "https://solanadustcleaner.com",
     siteName: "Solana Dust Cleaner & NFT Burner",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Solana Dust Cleaner",
+      },
+    ],
     locale: "en_US",
     type: "website",
   },
@@ -36,6 +44,7 @@ export const metadata: Metadata = {
     title: "Solana Dust Cleaner & Spam NFT Burner - Reclaim Locked SOL Rent",
     description:
       "Close empty SPL token accounts and burn spam NFTs to reclaim your locked SOL rent deposits. Free, transparent, open-source utility for the Solana community.",
+    images: ["/og-image.png"],
   },
   robots: {
     index: true,

@@ -100,9 +100,9 @@ function isPrivateIP(ip: string): boolean {
 // that always returns the pinned address.
 // ---------------------------------------------------------------------------
 async function safeFetch(targetUrl: URL, timeoutMs: number): Promise<Response> {
-  const resolved = await dnsLookup(targetUrl.hostname);
+  const resolved = await dnsLookup(targetUrl.hostname, { family: 4 });
   const pinnedIP = resolved.address;
-  const family = resolved.family; // 4 or 6
+  const family = resolved.family; // 4
 
   if (isPrivateIP(pinnedIP)) {
     throw new Error("Resolved IP is in a private/reserved range");
@@ -235,7 +235,7 @@ export async function GET(request: Request) {
     return NextResponse.json(data);
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unknown error";
-    console.error("Proxy error:", msg);
+    console.error("Proxy error (full):", error);
 
     if (msg.includes("private") || msg.includes("reserved")) {
       return NextResponse.json({ error: "Forbidden target address" }, { status: 403 });

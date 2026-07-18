@@ -20,12 +20,12 @@
   --accent: oklch(0.75 0.16 70);
   --accent-subtle: oklch(0.75 0.16 70 / 0.1);
 
-  /* Background — pure near-black, no hue tint */
-  --bg: oklch(0.1 0 0);
-  --surface: oklch(0.145 0 0);
-  --surface-hover: oklch(0.17 0 0);
-  --border: oklch(1 0 0 / 0.08);
-  --border-hover: oklch(1 0 0 / 0.14);
+  /* Background — dark graphite zinc-950/900/800 scale */
+  --bg: #09090b;
+  --surface: #18181b;
+  --surface-hover: #27272a;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.14);
 
   /* Ink — high contrast, faint cool lean */
   --ink: oklch(0.94 0.005 185);
@@ -176,4 +176,10 @@ button:active {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Custom Text Selection Style */
+::selection {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: var(--ink);
 }

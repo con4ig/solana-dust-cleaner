@@ -2017,12 +2017,13 @@ export default function Home() {
           target="_blank"
           rel="noopener noreferrer"
           style={{
-            color: "var(--faint)",
-            textDecoration: "none",
+            color: "var(--primary)",
+            textDecoration: "underline",
+            textUnderlineOffset: "3px",
             transition: "color 150ms ease",
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = "var(--muted)")}
-          onMouseLeave={(e) => (e.currentTarget.style.color = "var(--faint)")}
+          onMouseEnter={(e) => (e.currentTarget.style.color = "var(--primary-hover)")}
+          onMouseLeave={(e) => (e.currentTarget.style.color = "var(--primary)")}
         >
           Open-source
         </a>

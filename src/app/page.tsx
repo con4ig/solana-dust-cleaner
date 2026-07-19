@@ -2018,8 +2018,7 @@ export default function Home() {
           rel="noopener noreferrer"
           style={{
             color: "var(--primary)",
-            textDecoration: "underline",
-            textUnderlineOffset: "3px",
+            textDecoration: "none",
             transition: "color 150ms ease",
           }}
           onMouseEnter={(e) => (e.currentTarget.style.color = "var(--primary-hover)")}

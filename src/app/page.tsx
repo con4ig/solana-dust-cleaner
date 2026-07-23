@@ -115,7 +115,8 @@ function parseMetaplexMetadata(
 // ---------- component ----------
 export default function Home() {
   const { connection } = useConnection();
-  const { connected, publicKey, connecting, sendTransaction, disconnect } = useWallet();
+  const { connected, publicKey, connecting, sendTransaction, signTransaction, disconnect } =
+    useWallet();
   const { setVisible } = useWalletModal();
   const [mounted, setMounted] = useState(false);
   const [walletMenuOpen, setWalletMenuOpen] = useState(false);
@@ -523,11 +524,14 @@ export default function Home() {
             }
           }
 
-          const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+          const { blockhash, lastValidBlockHeight } =
+            await connection.getLatestBlockhash("finalized");
           transaction.recentBlockhash = blockhash;
           transaction.feePayer = publicKey;
 
-          const signature = await sendTransaction(transaction, connection);
+          if (!signTransaction) throw new Error("Wallet does not support signing");
+          const signedTx = await signTransaction(transaction);
+          const signature = await connection.sendRawTransaction(signedTx.serialize());
 
           const confirmation = await connection.confirmTransaction({
             signature,

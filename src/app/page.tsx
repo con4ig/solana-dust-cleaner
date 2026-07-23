@@ -327,6 +327,13 @@ export default function Home() {
 
           for (let j = 0; j < chunk.length; j++) {
             const info = accountInfos[j];
+            const MOCK_IMAGES = [
+              "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150&auto=format&fit=crop&q=60",
+              "https://images.unsplash.com/photo-1642543492481-44e81e3914a7?w=150&auto=format&fit=crop&q=60",
+              "https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?w=150&auto=format&fit=crop&q=60",
+              "https://images.unsplash.com/photo-1617791160505-6f006e121980?w=150&auto=format&fit=crop&q=60",
+            ];
+
             let name = "Unknown NFT";
             let symbol = "";
             let uri = "";
@@ -349,6 +356,18 @@ export default function Home() {
               } catch {
                 // Aborted or network error – skip image
               }
+            }
+
+            // Fallback for mock NFTs generated without on-chain Metaplex metadata
+            if (name === "Unknown NFT") {
+              const slice = chunk[j].mint.slice(0, 4);
+              name = `Spam Airdrop #${slice}`;
+              symbol = "SPAM";
+              // Pick deterministic mock image based on mint characters
+              const imgIndex =
+                Math.abs(chunk[j].mint.charCodeAt(0) + chunk[j].mint.charCodeAt(1)) %
+                MOCK_IMAGES.length;
+              image = MOCK_IMAGES[imgIndex];
             }
 
             if (isStale()) return;
